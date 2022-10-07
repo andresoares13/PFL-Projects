@@ -1,8 +1,12 @@
 import Data.List
+import Data.Char
 
 type Mon = (Int, String, Int) -- monomial where the first member is the number, the second the variable and the third the exponent, ex 7*y^2 = (7,"y",2)
 type Poly = [Mon]
 --pol ex : [(0,"x",2),(2,"y",0),(5,"z",0),(1,"y",0),(7,"y",2)]
+-- test of sum: uiSumPol [(3,"x",2),(6,"x",1),(4,"y",2),(5,"x",1)] [(7,"x",1),((-6),"y",2),(4,"x",1)]
+              --uiSumPol [(10,"x",2),((-10),"y",2),((-1),"x",1),((-10),"x",2),(5,"~",0)] [(5,"z",6),(10,"y",2),((-19),"~",0),(4,"x",1),((-7),"w",4)]
+--By convention, a polynomial like 7 (doesn't have a variable) will be written like (7,"~",0)
 
 getExp :: Mon -> Int
 getExp (_,_,x) = x
@@ -38,4 +42,25 @@ filterVarAndExp p m = filter (\(_,b,c) -> (b == (getVar m)) && (c == (getExp m))
 
 reverseFilterVarAndExp :: Poly -> Mon -> Poly --The reverse of function filterVarAndExp, this one returns a Polynomial without any monomials that contain the same variable and exponent as the one given
 reverseFilterVarAndExp p m = filter (\(_,b,c) -> (b /= (getVar m)) || (c /= (getExp m))) p
+
+printPol :: Poly -> String
+printPol [] = ""
+printPol (p:ps) = (getMonStr p)++ " + " ++ (printPol ps)
+
+sumPol :: Poly -> Poly -> Poly --Calculates recursively the sum of two polynomials. uses recursion to try to sum every member of p1 with some member from p2
+sumPol p1 [] = p1
+sumPol [] p2 = []
+sumPol (p1:ps1) p2 = if (length (filterVarAndExp p2 p1) == 0) then [p1] ++ sumPol ps1 p2 else ([sumMon p1 (head (filterVarAndExp p2 p1))]) ++ sumPol ps1 p2
+
+sumPolVariableRecover :: Poly -> Poly -> Poly --Due to the nature of the sumPol function, if there are any variables in p2 that are not in p1 they will not be added to the final Poly and so this function goes recursively through p2 and returns a poly of the missing variables
+sumPolVariableRecover [] p2 = p2
+sumPolVariableRecover p1 [] = []
+sumPolVariableRecover p1 (p2:ps2) = if (existsVar p1 p2) then sumPolVariableRecover p1 ps2 else [p2] ++ sumPolVariableRecover p1 ps2
+
+existsVar :: Poly -> Mon -> Bool --Checks whether or not a variable from a monomial exists in a polynomial
+existsVar p m = if (length (filter (\(_,b,_) -> (b == (getVar m))) p) == 0) then False else True    
+
+
+uiSumPol :: Poly -> Poly -> Poly --Guarentees that the polynomials are normalized before trying to calculate their sum and normalizes the resulting polynomial since some members may become 0, ex: 10*x^2 - 10*x^2
+uiSumPol p1 p2 = normPol ((sumPol (normPol p1) (normPol p2)) ++ (sumPolVariableRecover p1 p2))
 
