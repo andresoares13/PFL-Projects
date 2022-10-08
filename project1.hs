@@ -1,4 +1,6 @@
 import Data.List
+import Data.Char
+
 
 --Definition of Polynomial and Monomial
 
@@ -109,6 +111,44 @@ derivePolyNormalize p = normPol (derivePoly (normPol p))
 uiDerivePol :: Poly -> IO () -- Prints the Polynomial after being derived and normalized, also given the string output format that we have chosen, we need to confirm whether the first monomial is positive or negative otherwise it will not have the "-" in the string
 uiDerivePol p = printPolIO (if (getNum (head (derivePolyNormalize p)) > 0) then getStrPol (derivePolyNormalize p) else "-" ++ getStrPol (derivePolyNormalize p))
 
+
+--Parsing String Input into Our Format Section
+
+stringToInt :: String -> Int -- Converts a String into an Int
+stringToInt s = read s :: Int
+
+getNumFromString :: String -> String --Finds recursively the string containing the number from a string of a monomial
+getNumFromString "" = ""
+getNumFromString (s:sx) = if (s /= '*') then ([s] ++ getNumFromString sx) else ""
+
+getVarFromString :: String -> String -- Finds recursively the variable in a string of a monomial
+getVarFromString "" = ""
+getVarFromString (s:sx) = if (ord s >= 97 && ord s <= 122) then ([s] ++ getVarFromString sx) else "" ++ getVarFromString sx
+
+getExpFromString :: String -> String -- Finds recursively the exponent in a string of a monomial, only called when the string has a variable
+getExpFromString "" = ""
+getExpFromString (s:sx) = if (ord s >= 97 && ord s <= 122) then ((filter (\x -> ord x>48 && ord x <=57) sx)) else getExpFromString sx
+
+createMon :: String -> Mon -- Creates a monomial from a string, checks conditions like lack of exponent in the string and a string not containing a variable
+createMon s = if (getVarFromString s == "") then (stringToInt (getNumFromString s),"~",0) else (if (getExpFromString s == "") then (stringToInt (getNumFromString s), getVarFromString s,1) else (stringToInt (getNumFromString s), getVarFromString s, stringToInt (getExpFromString s)) )
+
+
+createPol :: [String] -> Poly
+createPol [] = []
+createPol (s:sx) = [createMon s] ++ createPol sx
+
+polyParse :: String -> Poly
+polyParse s = createPol (words s)
+
+
+
+-- User Interface Section
+
+programUI :: IO ()
+programUI = do
+  putStr "\n\nPolynomial Operations Calculator \n\n\n What would you like to do? \n\n 1. Normalize a polynomial \n 2. Sum two polynomials \n 3. Multiply two polynomials \n 4. Derive a polynomial\n\n"
+  option <- getLine
+  putStr (option)--temporary
 
 
 
