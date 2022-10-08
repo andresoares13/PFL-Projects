@@ -64,3 +64,13 @@ existsVar p m = if (length (filter (\(_,b,_) -> (b == (getVar m))) p) == 0) then
 uiSumPol :: Poly -> Poly -> Poly --Guarentees that the polynomials are normalized before trying to calculate their sum and normalizes the resulting polynomial since some members may become 0, ex: 10*x^2 - 10*x^2
 uiSumPol p1 p2 = normPol ((sumPol (normPol p1) (normPol p2)) ++ (sumPolVariableRecover p1 p2))
 
+deriveMon :: Mon -> Mon -- Derives one Monomial
+deriveMon (a,b,c) = if (c-1 > 0) then (a * c,b,c-1) else (a * c,"~",0)
+
+derivePoly :: Poly -> Poly -- Goes recursively through the polynomial and derives each member (monomial)
+derivePoly [] = []
+derivePoly (p:ps) = [deriveMon p] ++ derivePoly ps
+
+uiDerivePol :: Poly -> Poly -- Guarantees that the polynomials are normalized before deriving them and normalizes them afterwards for cases like 4x + 7 = 4, where the 7 disappears
+uiDerivePol p = normPol (derivePoly (normPol p))
+
