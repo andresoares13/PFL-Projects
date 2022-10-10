@@ -61,7 +61,7 @@ getStrPol [] = ""
 getStrPol (p:ps) = (getMonStr p) ++ (if (length ps > 0) then (if (getNum (head ps) > 0) then " + " else " - ") else "") ++ (getStrPol ps)
 
 printPolIO :: String -> IO () --Prints the given string
-printPolIO s = putStr (s ++ "\n")
+printPolIO s = putStr ("\nYour normalized polynomial: " ++ s ++ "\n\n")
 
 
 
@@ -148,7 +148,20 @@ programUI :: IO ()
 programUI = do
   putStr "\n\nPolynomial Operations Calculator \n\n\n What would you like to do? \n\n 1. Normalize a polynomial \n 2. Sum two polynomials \n 3. Multiply two polynomials \n 4. Derive a polynomial\n\n"
   option <- getLine
-  putStr (option)--temporary
+  if (option == (show 1)) then
+    do
+    putStr "\nPlease write the polynomial you would like to normalize in the form 'a*x^2 + b*x + c'\n\n"
+    poly <- getLine
+    uiNormPol (polyParse poly)
+    putStr "\nWould you like to go back?\n[y/n]\n"
+    do
+      back <- getLine
+      if (back == "y") then
+        programUI
+      else
+        putStr "\nThank you for using this program!\n"  
+  else 
+    putStr "\nNot implemented yet\n"   
 
 
 
