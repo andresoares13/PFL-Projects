@@ -4,53 +4,67 @@ import Data.Char
 
 --Definition of Polynomial and Monomial
 
-type Mon = (Int, String, Int) -- monomial where the first member is the number, the second the variable and the third the exponent, ex 7*y^2 = (7,"y",2)
+type Mon = (Int, String, [Int]) -- monomial where the first member is the number, the second the variable and the third the exponent, ex 7*y^2 = (7,"y",2)
 type Poly = [Mon] -- polynomial which is a list of one or more monomials    
 --By convention, a polynomial like 7 (doesn't have a variable) will be written like (7,"~",0)
 
 --Basic Monomials operations / getters Section
 
-getExp :: Mon -> Int --Returns the value of the exponent
-getExp (_,_,x) = x
+getExp :: Char -> Mon -> Int --Returns the value of the exponent given the varibale
+getExp x (_,v,l) = snd (head (filter (\(a,_) -> a == x) (zip v l))) 
+
+getExpL :: Mon -> [Int] 
+getExpL (_,_,x) = x
 
 getVar :: Mon -> String --Returns the string of the variable
 getVar (_,s,_) = s
 
+getVarIndex :: Char -> Mon -> Int
+getVarIndex ch (a,b,c) = snd (head (filter (\(a,b) -> a == ch) (zip b [0..])))
+
 getNum :: Mon -> Int --Returns the number of the monomial, ex: getNum 7*y^2 would return 7
 getNum (n,_,_) = n
 
+getVarExpStr :: [(Char,Int)] -> String
+getVarExpStr [] = ""
+getVarExpStr ((f,s):ls) = (if (f=='~' || s==0) then "" else [f]++ (if (s>1) then ("^"++ show s) else "")) ++ getVarExpStr ls
+
+
+
 getMonStr :: Mon -> String --Returns the string of the monomial in the required format, ex: getMonStr (7,"x",2) would return 7*x^2
-getMonStr m = (show (abs (getNum m)) ++ (if (getVar m /= "~") then ("*" ++ (getVar m)) else ("")) ++ (if (getExp m > 1) then ("^" ++ show (getExp m)) else ""))
+getMonStr m = (show (abs (getNum m)) ++  getVarExpStr (zip (getVar m) (getExpL m) ))
 
 sumMon :: Mon -> Mon -> Mon --Sums two monomials, this function is only called when both monomials in the input have the same variable and exponent
-sumMon m1 m2 = (getNum m1 + getNum m2,getVar m1, getExp m1)
+sumMon m1 m2 = (getNum m1 + getNum m2,getVar m1, getExpL m1)
 
 
 --Normalization Section -Task a)
 
 normPol :: Poly -> Poly --Normalizes the Polynomial by removing zeros, sorting and adding all of the monomials that can be summed
-normPol p = foldl (\acc m -> if (length (filterVarAndExp acc m) == 0) then acc ++ [m] else (reverseFilterVarAndExp acc m) ++ [sumMon m (head (filterVarAndExp acc m))]  ) [] (sortPol (removeZeros p))
+normPol p = removeZeros (foldl (\acc m -> if (length (filterVarAndExp acc m) == 0) then acc ++ [m] else (reverseFilterVarAndExp acc m) ++ [sumMon m (head (filterVarAndExp acc m))]  ) [] (sortPol (removeZeros p)))
 
 sortPol :: Poly -> Poly -- Sorts the Polynomial first by the letter of the variable in alphabaetic order and then by the exponent in descending order
-sortPol p = sortBy (\(_,_,a) (_,_,b) -> flip compare a b) (sortBy (\(_,a,_) (_,b,_) -> compare a b) p)
+sortPol p = sortBy (\(_,_,a) (_,_,b) -> flip compare (maximum a) (maximum b)) (sortBy (\(_,a,_) (_,b,_) -> compare a b) p)
 
 
 removeZeros :: Poly -> Poly -- Removes monomials containing 0 like 0y^2
 removeZeros p = filter (\(a,_,_) -> a /= 0) p
 
 uiNormPol :: Poly -> IO ()
-uiNormPol p = printPolIO (if (getNum (head (normPol p)) > 0) then (getStrPol (normPol p)) else "-" ++ getStrPol (normPol p))
+uiNormPol p = if (length nP == 0) then (printPolIO "0") else printPolIO (if (getNum (head (nP)) > 0) then (getStrPol (nP)) else "-" ++ getStrPol (nP))
+  where nP = normPol p
 
 
 
 --Helper functions section that filter in and out given variables so that we have polynomials with only those and without those vars
 
 
-filterVarAndExp :: Poly -> Mon -> Poly --Returns a polynomial that may only contains only the monomials that have the same variable and exponent as the one given
-filterVarAndExp p m = filter (\(_,b,c) -> (b == (getVar m)) && (c == (getExp m))) p
+filterVarAndExp :: Poly -> Mon -> Poly --Returns a polynomial that contains only the monomials that have the same variable and exponent as the one given
+filterVarAndExp p m = filter (\(_,b,c) -> (b == (getVar m)) && (c == (getExpL m))) p
 
 reverseFilterVarAndExp :: Poly -> Mon -> Poly --The reverse of function filterVarAndExp, this one returns a Polynomial without any monomials that contain the same variable and exponent as the one given
-reverseFilterVarAndExp p m = filter (\(_,b,c) -> (b /= (getVar m)) || (c /= (getExp m))) p
+reverseFilterVarAndExp p m = filter (\(_,b,c) -> (b /= (getVar m)) || (c /= (getExpL m))) p
+
 
 
 
@@ -61,31 +75,19 @@ getStrPol [] = ""
 getStrPol (p:ps) = (getMonStr p) ++ (if (length ps > 0) then (if (getNum (head ps) > 0) then " + " else " - ") else "") ++ (getStrPol ps)
 
 printPolIO :: String -> IO () --Prints the given string
-printPolIO s = putStr ("\nYour normalized polynomial: " ++ s ++ "\n\n")
+printPolIO s = putStr ("\nResult: " ++ s ++ "\n\n")
 
 
 
 --Sum Section -Task b)
 
-sumPol :: Poly -> Poly -> Poly --Calculates recursively the sum of two polynomials. uses recursion to try to sum every member of p1 with some member from p2
-sumPol p1 [] = p1
-sumPol [] p2 = []
-sumPol (p1:ps1) p2 = if (length (filterVarAndExp p2 p1) == 0) then [p1] ++ sumPol ps1 p2 else ([sumMon p1 (head (filterVarAndExp p2 p1))]) ++ sumPol ps1 p2
-
-sumPolVariableRecover :: Poly -> Poly -> Poly --Due to the nature of the sumPol function, if there are any variables in p2 that are not in p1 they will not be added to the final Poly and so this function goes recursively through p2 and returns a poly of the missing variables
-sumPolVariableRecover [] p2 = p2
-sumPolVariableRecover p1 [] = []
-sumPolVariableRecover p1 (p2:ps2) = if (existsVarExp p1 p2) then sumPolVariableRecover p1 ps2 else [p2] ++ sumPolVariableRecover p1 ps2
-
-existsVarExp :: Poly -> Mon -> Bool --Checks whether or not a variable and exponent from a monomial exists in a polynomial, useful when checking if all the monomials that didnt have a match in the sum are in the resulting polynomial
-existsVarExp p m = if (length (filter (\(_,b,c) -> (b == (getVar m) && c == (getExp m))) p) == 0) then False else True
-
-sumPolNormalize :: Poly -> Poly -> Poly --Guarentees that the polynomials are normalized before trying to calculate their sum and normalizes the resulting polynomial since some members may become 0, ex: 10*x^2 - 10*x^2
-sumPolNormalize p1 p2 = normPol ((sumPol (normPol p1) (normPol p2)) ++ (sumPolVariableRecover p1 p2))
+sumPol :: Poly -> Poly -> Poly --Since the normalization already sums together the monomials, this function appends both polynomials and normalizes them therefore generating their sum
+sumPol p1 p2 = normPol (p1 ++ p2)
 
 
-uiSumPol :: Poly -> Poly -> IO () -- Prints the resulting polynomial after both were added and normalized, also given the string output format that we have chosen, we need to confirm whether the first monomial is positive or negative otherwise it will not have the "-" in the string 
-uiSumPol p1 p2 = printPolIO (if (getNum (head (sumPolNormalize p1 p2)) > 0) then (getStrPol (sumPolNormalize p1 p2)) else "-" ++ getStrPol (sumPolNormalize p1 p2))
+uiSumPol :: Poly -> Poly -> IO () -- Prints the resulting polynomial after both were added
+uiSumPol p1 p2 = if (length sP == 0) then (printPolIO "0") else printPolIO (if (getNum (head (sP)) > 0) then (getStrPol (sP)) else "-" ++ getStrPol (sP))
+  where sP = sumPol p1 p2
 
 
 --Multiplication Section -Task c)
@@ -97,21 +99,37 @@ uiSumPol p1 p2 = printPolIO (if (getNum (head (sumPolNormalize p1 p2)) > 0) then
 
 --Derivation Section -Task d)
 
-deriveMon :: Mon -> Mon -- Derives one Monomial
-deriveMon (a,b,c) = if (c-1 > 0) then (a * c,b,c-1) else (a * c,"~",0)
+deriveMon :: Char -> Mon -> Mon -- Derives one Monomial with respect to a certain variable
+deriveMon d (a,b,c) = if (existsVarMon d (a,b,c)) then (if ((getExp d (a,b,c))-1 > 0) then (a * (getExp d (a,b,c)),b, removeOneFromExp (getVarIndex d (a,b,c)) (zip c [0..])) else (a * (getExp d (a,b,c)),deleteVar d b, deleteExp (getVarIndex d (a,b,c)) (zip c [0..]))) else (0,"~",[0])
 
-derivePoly :: Poly -> Poly -- Goes recursively through the polynomial and derives each member (monomial)
-derivePoly [] = []
-derivePoly (p:ps) = [deriveMon p] ++ derivePoly ps
+existsVarMon :: Char -> Mon -> Bool --Checks to see if a given variable exists in a monomial, in derivation this is very useful since, ex: d/dx (7y) = 0 since the x is not present
+existsVarMon c (_,s,_) = if (length (filter (\x -> x == c) s) > 0) then True else False
 
-derivePolyNormalize :: Poly -> Poly --Normalizes the polynomial before and after deriving to make sure everything is in the correct format and cases like 4x + 7 = 4 wont show the 7 since it disappears
-derivePolyNormalize p = normPol (derivePoly (normPol p))
+deleteVar :: Char -> String -> String -- Deletes a given variable from a string, useful when derivating since some variables may disappear
+deleteVar c [] = []
+deleteVar c (s:sx) = if (c == s) then (deleteVar c sx) else [s] ++ deleteVar c sx
+
+deleteExp :: Int -> [(Int,Int)] -> [Int] --Deletes a exponent from a string given its index, useful when deriving and the variable is deleted 
+deleteExp _ [] = []
+deleteExp i ((a,b):ls) = if (i == b) then (deleteExp i ls) else [a] ++ deleteExp i ls  
+
+removeOneFromExp :: Int -> [(Int,Int)] -> [Int] --this list is after a zip function and the first int is the index, ex: [(a,0),(b,1),(c,2)] where a.b.c, etc are the exponents, the function goes recursively through the list of (exponents,indexes) and substracts 1 from an exponent given an index (needed when deriving)
+removeOneFromExp _ [] = []
+removeOneFromExp i ((a,b):ls) = if (i == b) then ([a-1] ++ removeOneFromExp i ls) else [a] ++ removeOneFromExp i ls  
+
+derivePoly :: Char -> Poly -> Poly -- Goes recursively through the polynomial and derives each member (monomial)
+derivePoly _ [] = []
+derivePoly c (p:ps) = [deriveMon c p] ++ derivePoly c ps
+
+derivePolyNormalize :: Char -> Poly -> Poly --Normalizes the polynomial before and after deriving to make sure everything is in the correct format and cases like 4x + 7 = 4 wont show the 7 since it disappears
+derivePolyNormalize c p = normPol (derivePoly c (normPol p))
 
 
-uiDerivePol :: Poly -> IO () -- Prints the Polynomial after being derived and normalized, also given the string output format that we have chosen, we need to confirm whether the first monomial is positive or negative otherwise it will not have the "-" in the string
-uiDerivePol p = printPolIO (if (getNum (head (derivePolyNormalize p)) > 0) then getStrPol (derivePolyNormalize p) else "-" ++ getStrPol (derivePolyNormalize p))
+uiDerivePol :: Char -> Poly -> IO () -- Prints the Polynomial after being derived and normalized, also given the string output format that we have chosen, we need to confirm whether the first monomial is positive or negative otherwise it will not have the "-" in the string
+uiDerivePol c p = if (length dP == 0) then (printPolIO "0") else printPolIO (if (getNum (head (dP)) > 0) then getStrPol (dP) else "-" ++ getStrPol (dP))
+  where dP = derivePolyNormalize c p
 
-
+{-}
 --Parsing String Input into Our Format Section
 
 stringToInt :: String -> Int -- Converts a String into an Int
@@ -154,24 +172,27 @@ programUI = do
     poly <- getLine
     uiNormPol (polyParse poly)
     putStr "\nWould you like to go back?\n[y/n]\n"
-    do
-      back <- getLine
-      if (back == "y") then
-        programUI
-      else
-        putStr "\nThank you for using this program!\n"  
+    
+    back <- getLine
+    if (back == "y") then
+      programUI
+    else
+      putStr "\nThank you for using this program!\n"  
   else 
     putStr "\nNot implemented yet\n"   
 
+{<-}
 
 
 --Tests Section
 
 --test of norm: 
-              --uiNormPol[(0,"x",2),(2,"y",0),(5,"z",0),(1,"y",0),(7,"y",2)]
+              --uiNormPol[(0,"x",[2]),(2,"y",[1]),(5,"z",[1]),(1,"y",[1]),(7,"y",[2])
 -- test of sum: 
-              --uiSumPol [(3,"x",2),(6,"x",1),(4,"y",2),(5,"x",1)] [(7,"x",1),((-6),"y",2),(4,"x",1)]
-              --uiSumPol [(7,"x",1),((-6),"y",2),(4,"x",1),(5,"~",0)] [(1,"y",1)]
-              --uiSumPol [(10,"x",2),((-10),"y",2),((-1),"x",1),((-10),"x",2),(5,"~",0)] [(5,"z",6),(10,"y",2),((-19),"~",0),(4,"x",1),((-7),"w",4)]
+              --uiSumPol [(3,"x",[2]),(6,"x",[1]),(4,"y",[2]),(5,"x",[1])] [(7,"x",[1]),((-6),"y",[2]),(4,"x",[1])]
+              --uiSumPol [(3,"x",[2]),(6,"x",[1]),(4,"y",[2]),(5,"x",[1])] [(7,"x",[1]),((-6),"y",[2]),(4,"xy",[1,2])]
+              --uiSumPol [(7,"x",[1]),((-6),"y",[2]),(4,"x",[1]),(5,"~",[0])] [(1,"y",[1])]
+              --uiSumPol [(10,"x",[2]),((-10),"y",[2]),((-1),"x",[1]),((-10),"x",[2]),(5,"~",[0])] [(5,"z",[6]),(10,"y",[2]),((-19),"~",[0]),(4,"x",[19]),((-7),"w",[4])]
 -- test of derivation:
-              --uiDerivePol [(7,"x",1),((-6),"y",2),(4,"x",1),(5,"~",0)]          
+              --uiDerivePol 'x' [(7,"x",[1]),((-6),"y",[2]),(4,"x",[1]),(5,"~",[0])] 
+              --uiDerivePol 'x' [(2,"xy",[2,3]),(4,"x",[2]),(8,"y",[1]),((-9),"zx",[1,1])]         
