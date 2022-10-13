@@ -60,11 +60,23 @@ uiNormPol p = if (length nP == 0) then (printPolIO "0") else printPolIO (if (get
 
 
 filterVarAndExp :: Poly -> Mon -> Poly --Returns a polynomial that contains only the monomials that have the same variable and exponent as the one given
-filterVarAndExp p m = filter (\(_,b,c) -> (b == (getVar m)) && (c == (getExpL m))) p
+filterVarAndExp p m = filter (\(_,b,c) -> (b == (sortedVars l)) && (c == (sortedExp l))) p
+  where l = getSortedVarExpList (getVar m) (getExpL m)
 
 reverseFilterVarAndExp :: Poly -> Mon -> Poly --The reverse of function filterVarAndExp, this one returns a Polynomial without any monomials that contain the same variable and exponent as the one given
-reverseFilterVarAndExp p m = filter (\(_,b,c) -> (b /= (getVar m)) || (c /= (getExpL m))) p
+reverseFilterVarAndExp p m = filter (\(_,b,c) -> (b /= (sortedVars l)) || (c /= (sortedExp l))) p
+  where l = getSortedVarExpList (getVar m) (getExpL m)
 
+sortedVars :: [(Char,Int)] -> String 
+sortedVars [] = []
+sortedVars (l:ls) = [fst l] ++ sortedVars ls
+
+sortedExp :: [(Char, Int)] -> [Int]
+sortedExp [] = []
+sortedExp (l:ls) = [snd l] ++ sortedExp ls
+
+getSortedVarExpList :: String -> [Int] -> [(Char,Int)]
+getSortedVarExpList s l = sortBy (\ (a,_) (b,_) -> compare a b) (zip s l)
 
 
 
