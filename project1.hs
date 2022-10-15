@@ -104,7 +104,45 @@ uiSumPol p1 p2 = if (length sP == 0) then (printPolIO "0") else printPolIO (if (
 
 --Multiplication Section -Task c)
 
+mulMon :: Mon -> Mon -> Mon --Multiplies two monomials by ziping their variables with their correspondent exponents and then unzipping after normalizing said zipped list, also multiplies the number of both monomials
+mulMon (a,b,c) (x,y,z) = 
+  let mVars = unzipNormVars (normVarsExp (zipVarsExp b y c z))
+      mExp = unzipNormExp (normVarsExp (zipVarsExp b y c z))
+  in (a*x, mVars, mExp)
 
+zipVarsExp :: String -> String -> [Int] -> [Int] -> [(Char,Int)] --  returns a list of tuples where the first element is a char of the variable and the other is the exponent of that variable
+zipVarsExp s1 s2 e1 e2 = sortBy (\(a,_) (b,_) -> compare a b) ((zip s1 e1) ++ (zip s2 e2))
+
+normVarsExp :: [(Char,Int)] -> [(Char,Int)]
+normVarsExp l = foldl (\acc (a,b) -> if ((pairFilterVar a acc) == []) then acc ++ [(a,b)] else (reversePairFilterVar a acc) ++ [(a,b+ (snd (head (pairFilterVar a acc))))]) [] l
+
+pairFilterVar :: Char -> [(Char, Int)] -> [(Char, Int)] -- Receives a list of tuples (var,Exp) and a char and returns a list containing only the tuples with that char as their var
+pairFilterVar x l = if (length f == 0) then [] else f
+  where f = filter (\(a,_) -> a == x) l
+
+reversePairFilterVar :: Char -> [(Char, Int)] -> [(Char, Int)] -- Receives a list of tuples (var,Exp) and a char and returns a list containing only the tuples that dont have the char as their var
+reversePairFilterVar x l = if (length f == 0) then [] else f
+  where f = filter (\(a,_) -> a /= x) l
+
+unzipNormVars :: [(Char,Int)] -> String -- Receives a list of tuples (var,exp) and returns a string containing all the vars
+unzipNormVars [] = []
+unzipNormVars ((a,b):ls) = [a] ++  unzipNormVars ls
+
+unzipNormExp :: [(Char,Int)] -> [Int] -- Receives a list of tuples (var,exp) and returns a list of all the exponents
+unzipNormExp [] = []
+unzipNormExp ((a,b):ls) = [b] ++  unzipNormExp ls
+
+mulPolStep :: Mon -> Poly -> Poly -- Intermediate funciton of multiplication, multiplies one monomial with a polynomial (to be called for every monomial of polynomial 1 of multiplication to be multiplied with polynomial 2)
+mulPolStep _ [] = []
+mulPolStep m (l:ls) = [(mulMon m l)] ++ mulPolStep m ls
+
+mulPol :: Poly -> Poly -> Poly -- Multiplies two polynomails by going through the first one recursively and calling the function that multiplies each monomial with the other polynomial,ex : (1 + 2) * (3 + 4) = (1*3) + (1*4) + (2*3) + (2*4)
+mulPol [] _ = []
+mulPol (p1:p1s) p2 = (mulPolStep p1 p2) ++ mulPol p1s p2
+
+uiMulPol :: Poly -> Poly -> IO () -- Prints the resulting polynomial after both were multiplied
+uiMulPol p1 p2 = if (length mP == 0) then (printPolIO "0") else printPolIO (if (getNum (head (mP)) > 0) then (getStrPol (mP)) else "-" ++ getStrPol (mP))
+  where mP = normPol (mulPol p1 p2)
 
 
 
@@ -205,6 +243,11 @@ programUI = do
               --uiSumPol [(3,"x",[2]),(6,"x",[1]),(4,"y",[2]),(5,"x",[1])] [(7,"x",[1]),((-6),"y",[2]),(4,"xy",[1,2])]
               --uiSumPol [(7,"x",[1]),((-6),"y",[2]),(4,"x",[1]),(5,"~",[0])] [(1,"y",[1])]
               --uiSumPol [(10,"x",[2]),((-10),"y",[2]),((-1),"x",[1]),((-10),"x",[2]),(5,"~",[0])] [(5,"z",[6]),(10,"y",[2]),((-19),"~",[0]),(4,"x",[19]),((-7),"w",[4])]
+
+-- Test of mul:
+              --uiMulPol [(2,"x",[2]),(3,"y",[1])] [(3,"y",[3]),(4,"zx",[1,1])]
+
 -- test of derivation:
               --uiDerivePol 'x' [(7,"x",[1]),((-6),"y",[2]),(4,"x",[1]),(5,"~",[0])] 
-              --uiDerivePol 'x' [(2,"xy",[2,3]),(4,"x",[2]),(8,"y",[1]),((-9),"zx",[1,1])]         
+              --uiDerivePol 'x' [(2,"xy",[2,3]),(4,"x",[2]),(8,"y",[1]),((-9),"zx",[1,1])]
+
