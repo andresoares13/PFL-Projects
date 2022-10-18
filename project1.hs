@@ -13,7 +13,7 @@ type Poly = [Mon] -- polynomial which is a list of one or more monomials
 getExp :: Char -> Mon -> Int --Returns the value of the exponent given the varibale
 getExp x (_,v,l) = snd (head (filter (\(a,_) -> a == x) (zip v l))) 
 
-getExpL :: Mon -> [Int] 
+getExpL :: Mon -> [Int] --Returns the list of exponents
 getExpL (_,_,x) = x
 
 getVar :: Mon -> String --Returns the string of the variable
@@ -25,7 +25,7 @@ getVarIndex ch (a,b,c) = snd (head (filter (\(a,b) -> a == ch) (zip b [0..])))
 getNum :: Mon -> Int --Returns the number of the monomial, ex: getNum 7*y^2 would return 7
 getNum (n,_,_) = n
 
-getVarExpStr :: [(Char,Int)] -> String
+getVarExpStr :: [(Char,Int)] -> String --Returns a string containing the vars and their exponents, ex: [("x",2)] -> "x^2"
 getVarExpStr [] = ""
 getVarExpStr ((f,s):ls) = (if (f=='~' || s==0) then "" else [f]++ (if (s>1) then ("^"++ show s) else "")) ++ getVarExpStr ls
 
@@ -41,7 +41,7 @@ sumMon m1 m2 = (getNum m1 + getNum m2,getVar m1, getExpL m1)
 --Normalization Section -Task a)
 
 normPol :: Poly -> Poly --Normalizes the Polynomial by removing zeros, sorting and adding all of the monomials that can be summed
-normPol p = removeZeros (foldl (\acc m -> if (length (filterVarAndExp acc m) == 0) then acc ++ [m] else (reverseFilterVarAndExp acc m) ++ [sumMon m (head (filterVarAndExp acc m))]  ) [] (sortPol (removeZeros p)))
+normPol p = removeZeros (foldl (\acc m -> if (length (filterVarAndExp acc m) == 0) then acc ++ [m] else (reverseFilterVarAndExp acc m) ++ [sumMon m (head (filterVarAndExp acc m))]  ) [] (sortPolyVars (sortPol (removeZeros p))))
 
 sortPol :: Poly -> Poly -- Sorts the Polynomial first by the letter of the variable in alphabaetic order and then by the exponent in descending order
 sortPol p = sortBy (\(_,_,a) (_,_,b) -> flip compare (maximum a) (maximum b)) (sortBy (\(_,a,_) (_,b,_) -> compare a b) p)
@@ -67,16 +67,21 @@ reverseFilterVarAndExp :: Poly -> Mon -> Poly --The reverse of function filterVa
 reverseFilterVarAndExp p m = filter (\(_,b,c) -> (b /= (sortedVars l)) || (c /= (sortedExp l))) p
   where l = getSortedVarExpList (getVar m) (getExpL m)
 
-sortedVars :: [(Char,Int)] -> String 
+sortedVars :: [(Char,Int)] -> String --receives a list of tuples (var,exponent) and returns the string containing all the variables
 sortedVars [] = []
 sortedVars (l:ls) = [fst l] ++ sortedVars ls
 
-sortedExp :: [(Char, Int)] -> [Int]
+sortedExp :: [(Char, Int)] -> [Int] --receives a list of tuples (var,exponent) and returns the list containing all the exponents
 sortedExp [] = []
 sortedExp (l:ls) = [snd l] ++ sortedExp ls
 
-getSortedVarExpList :: String -> [Int] -> [(Char,Int)]
+getSortedVarExpList :: String -> [Int] -> [(Char,Int)] -- receives the variables and exponents and returns a list of tuples of pairs of them, sorted by the ascii of the variable
 getSortedVarExpList s l = sortBy (\ (a,_) (b,_) -> compare a b) (zip s l)
+
+sortPolyVars :: Poly -> Poly -- Sorts all the vars in the polynomial so that cases like 7xy + 7yx are covered
+sortPolyVars [] = []
+sortPolyVars (p:ps) = [(getNum p, sortedVars l, sortedExp l)] ++ sortPolyVars ps
+  where l = getSortedVarExpList (getVar p) (getExpL p)
 
 
 
@@ -179,35 +184,54 @@ uiDerivePol :: Char -> Poly -> IO () -- Prints the Polynomial after being derive
 uiDerivePol c p = if (length dP == 0) then (printPolIO "0") else printPolIO (if (getNum (head (dP)) > 0) then getStrPol (dP) else "-" ++ getStrPol (dP))
   where dP = derivePolyNormalize c p
 
-{-}
+
 --Parsing String Input into Our Format Section
 
-stringToInt :: String -> Int -- Converts a String into an Int
-stringToInt s = read s :: Int
+removeSpaces:: String -> String --Removes all spaces from a string
+removeSpaces "" = ""
+removeSpaces (' ':sx) = removeSpaces sx
+removeSpaces (s:sx) = [s] ++ removeSpaces sx
 
-getNumFromString :: String -> String --Finds recursively the string containing the number from a string of a monomial
+getStringMember :: String -> String --Gets the first member from a string, ex f "-2x+6" = "-2x"
+getStringMember "" = ""
+getStringMember [a] = [a]
+getStringMember (s:sx) = if (s == '+') then "" else (if ((head sx) == '-') then [s] else [s] ++ getStringMember sx)
+
+removeFoundMember :: String-> String -> String --Takes away from a string the first n characters from a string where n is the length of the input, this is an auxiliary function used when parsing the string so to work with in the mother function we need to take away a "+" sign that may occur at the beggining
+removeFoundMember found s = if (length x == 0) then [] else (if (head x == '+') then reverse (take (length x-1) (reverse x)) else x)
+  where x = reverse (take (length s - length found) (reverse s))
+
+strSplit :: String -> [String] --Goes recursively and appends to the final list the members found in the string by getting the first member and calling itself with the rest of the string, note that given the other functions, the "-" sign will be kept so that later on while parsing we know whether the number is positive or negative
+strSplit [] = []
+strSplit s = [fstMember] ++ strSplit (removeFoundMember (fstMember) s)
+  where fstMember = getStringMember s
+
+getNumFromString :: String -> String -- Receives a string and returns only the number (and possibly the '-' sign), ex: f "-22xy^3z^2" = "-22"
 getNumFromString "" = ""
-getNumFromString (s:sx) = if (s /= '*') then ([s] ++ getNumFromString sx) else ""
+getNumFromString (s:sx) = if ((ord s > 47 && ord s < 58) || s == '-') then [s] ++ getNumFromString sx else ""
 
-getVarFromString :: String -> String -- Finds recursively the variable in a string of a monomial
+getVarFromString :: String -> String --Receives a string and returns only the variables
 getVarFromString "" = ""
 getVarFromString (s:sx) = if (ord s >= 97 && ord s <= 122) then ([s] ++ getVarFromString sx) else "" ++ getVarFromString sx
 
-getExpFromString :: String -> String -- Finds recursively the exponent in a string of a monomial, only called when the string has a variable
-getExpFromString "" = ""
-getExpFromString (s:sx) = if (ord s >= 97 && ord s <= 122) then ((filter (\x -> ord x>48 && ord x <=57) sx)) else getExpFromString sx
-
-createMon :: String -> Mon -- Creates a monomial from a string, checks conditions like lack of exponent in the string and a string not containing a variable
-createMon s = if (getVarFromString s == "") then (stringToInt (getNumFromString s),"~",0) else (if (getExpFromString s == "") then (stringToInt (getNumFromString s), getVarFromString s,1) else (stringToInt (getNumFromString s), getVarFromString s, stringToInt (getExpFromString s)) )
+getExpFromString :: String -> [Int] --Receives a string and each time it sees a '^' sign, it uses the getNumFromString function to get the exponent corresponding to that variable and appends it to the list
+getExpFromString "" = []
+getExpFromString [a] = if (ord a >= 97 && ord a <= 122) then [1] else []
+getExpFromString (s:sx) = if (ord s >= 97 && ord s <= 122 && (head sx) /= '^') then [1] ++ getExpFromString sx else (if (s == '^') then [read (getNumFromString sx)::Int] ++ getExpFromString sx else getExpFromString sx)
 
 
-createPol :: [String] -> Poly
+createMon :: String -> Mon --Receives a string and uses auxiliary functions to convert it to a monomial
+createMon s = 
+  let var = getVarFromString s
+      num = read (getNumFromString s)::Int
+  in if (var=="") then (num,"~",[0]) else (num,getVarFromString s,getExpFromString s)      
+
+createPol :: [String]-> Poly --Receives a list of strings and recursively creates monomials and appends them to generate a polynomial
 createPol [] = []
-createPol (s:sx) = [createMon s] ++ createPol sx
+createPol (l:ls) = [createMon l] ++ createPol ls
 
-polyParse :: String -> Poly
-polyParse s = createPol (words s)
-
+polyParse :: String -> Poly --Receives a string and converts it into a list of strings containing each member of the future polynomial and then converts that list into a polynomial
+polyParse s = createPol (strSplit (removeSpaces s))
 
 
 -- User Interface Section
@@ -218,7 +242,7 @@ programUI = do
   option <- getLine
   if (option == (show 1)) then
     do
-    putStr "\nPlease write the polynomial you would like to normalize in the form 'a*x^2 + b*x + c'\n\n"
+    putStr "\nPlease write the polynomial you would like to normalize in the form 'ax^2 + bx + c'\n\n"
     poly <- getLine
     uiNormPol (polyParse poly)
     putStr "\nWould you like to go back?\n[y/n]\n"
@@ -231,23 +255,27 @@ programUI = do
   else 
     putStr "\nNot implemented yet\n"   
 
-{<-}
+
 
 
 --Tests Section
 
 --test of norm: 
               --uiNormPol[(0,"x",[2]),(2,"y",[1]),(5,"z",[1]),(1,"y",[1]),(7,"y",[2])
+              --uiNormPol (polyParse "8x^2 +  9y  -4z^3 +7yx-7yx+2")
 -- test of sum: 
               --uiSumPol [(3,"x",[2]),(6,"x",[1]),(4,"y",[2]),(5,"x",[1])] [(7,"x",[1]),((-6),"y",[2]),(4,"x",[1])]
               --uiSumPol [(3,"x",[2]),(6,"x",[1]),(4,"y",[2]),(5,"x",[1])] [(7,"x",[1]),((-6),"y",[2]),(4,"xy",[1,2])]
               --uiSumPol [(7,"x",[1]),((-6),"y",[2]),(4,"x",[1]),(5,"~",[0])] [(1,"y",[1])]
               --uiSumPol [(10,"x",[2]),((-10),"y",[2]),((-1),"x",[1]),((-10),"x",[2]),(5,"~",[0])] [(5,"z",[6]),(10,"y",[2]),((-19),"~",[0]),(4,"x",[19]),((-7),"w",[4])]
-
+              --uiSumPol (mulPol [(2,"x",[2]),(3,"y",[1])] [(3,"y",[3]),(4,"zx",[1,1])]) [(2,"xzy",[1,1,1])
 -- Test of mul:
               --uiMulPol [(2,"x",[2]),(3,"y",[1])] [(3,"y",[3]),(4,"zx",[1,1])]
 
 -- test of derivation:
               --uiDerivePol 'x' [(7,"x",[1]),((-6),"y",[2]),(4,"x",[1]),(5,"~",[0])] 
               --uiDerivePol 'x' [(2,"xy",[2,3]),(4,"x",[2]),(8,"y",[1]),((-9),"zx",[1,1])]
+
+-- test of everything together (even parsing):
+              --uiSumPol (mulPol (derivePoly 'x' (normPol (polyParse "8x^2 +  9y  -   4z^3 +7yx-7yx+0"))) (polyParse "17yx+   5y^2")) (polyParse "80y^2x + 42")              
 
