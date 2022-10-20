@@ -1,4 +1,4 @@
-module Project1 (programUI,uiNormPol,uiSumPol,uiDerivePol,uiMulPol) where
+module Project1 (programUI,testNormPol,testSumPol,testDerivePol,testMulPol,polyParse) where
 
 import Data.List
 import Data.Char
@@ -34,7 +34,8 @@ getVarExpStr ((f,s):ls) = (if (f=='~' || s==0) then "" else [f]++ (if (s>1) then
 
 
 getMonStr :: Mon -> String --Returns the string of the monomial in the required format, ex: getMonStr (7,"x",2) would return 7*x^2
-getMonStr m = (show (abs (getNum m)) ++  getVarExpStr (zip (getVar m) (getExpL m) ))
+getMonStr m = ((if (num == 1) then "" else show (num) )++  getVarExpStr (zip (getVar m) (getExpL m) ))
+  where num = abs (getNum m)
 
 sumMon :: Mon -> Mon -> Mon --Sums two monomials, this function is only called when both monomials in the input have the same variable and exponent
 sumMon m1 m2 = (getNum m1 + getNum m2,getVar m1, getExpL m1)
@@ -52,9 +53,13 @@ sortPol p = sortBy (\(_,_,a) (_,_,b) -> flip compare (maximum a) (maximum b)) (s
 removeZeros :: Poly -> Poly -- Removes monomials containing 0 like 0y^2
 removeZeros p = filter (\(a,_,_) -> a /= 0) p
 
-uiNormPol :: Poly -> IO ()
+uiNormPol :: Poly -> IO () --Prints a given poly in its normalized form
 uiNormPol p = if (length nP == 0) then (printPolIO "0") else printPolIO (if (getNum (head (nP)) > 0) then (getStrPol (nP)) else "-" ++ getStrPol (nP))
   where nP = normPol p
+
+testNormPol :: Poly -> String -- To be used in the tests section to be put inside a `putStr` and show the result of the test to the user
+testNormPol p = if (length nP == 0) then ("0") else (if (getNum (head (nP)) > 0) then (getStrPol (nP)) else "-" ++ getStrPol (nP))
+  where nP = normPol p  
 
 
 
@@ -108,6 +113,10 @@ uiSumPol :: Poly -> Poly -> IO () -- Prints the resulting polynomial after both 
 uiSumPol p1 p2 = if (length sP == 0) then (printPolIO "0") else printPolIO (if (getNum (head (sP)) > 0) then (getStrPol (sP)) else "-" ++ getStrPol (sP))
   where sP = sumPol p1 p2
 
+testSumPol :: Poly -> Poly -> String -- To be used in the tests section to be put inside a `putStr` and show the result of the test to the user
+testSumPol p1 p2 = if (length sP == 0) then "0" else (if (getNum (head (sP)) > 0) then (getStrPol (sP)) else "-" ++ getStrPol (sP))
+  where sP = sumPol p1 p2  
+
 
 --Multiplication Section -Task c)
 
@@ -151,13 +160,22 @@ uiMulPol :: Poly -> Poly -> IO () -- Prints the resulting polynomial after both 
 uiMulPol p1 p2 = if (length mP == 0) then (printPolIO "0") else printPolIO (if (getNum (head (mP)) > 0) then (getStrPol (mP)) else "-" ++ getStrPol (mP))
   where mP = normPol (mulPol p1 p2)
 
+testMulPol :: Poly -> Poly -> String -- To be used in the tests section to be put inside a `putStr` and show the result of the test to the user
+testMulPol p1 p2 = if (length mP == 0) then ("0") else (if (getNum (head (mP)) > 0) then (getStrPol (mP)) else "-" ++ getStrPol (mP))
+  where mP = normPol (mulPol p1 p2)
+
 
 
 
 --Derivation Section -Task d)
 
 deriveMon :: Char -> Mon -> Mon -- Derives one Monomial with respect to a certain variable
-deriveMon d (a,b,c) = if (existsVarMon d (a,b,c)) then (if ((getExp d (a,b,c))-1 > 0) then (a * (getExp d (a,b,c)),b, removeOneFromExp (getVarIndex d (a,b,c)) (zip c [0..])) else (a * (getExp d (a,b,c)),deleteVar d b, deleteExp (getVarIndex d (a,b,c)) (zip c [0..]))) else (0,"~",[0])
+deriveMon d (a,b,c) = 
+  let varIndex = getVarIndex d (a,b,c)
+      exp = getExp d (a,b,c)
+      delVar = deleteVar d b
+
+  in (if (existsVarMon d (a,b,c)) then (if (exp - 1 > 0) then (a * (exp),b, removeOneFromExp (varIndex) (zip c [0..])) else (if (delVar == "") then (a*exp,"~",[0]) else (a * (exp),delVar, deleteExp (varIndex) (zip c [0..])))) else (0,"~",[0]))  
 
 existsVarMon :: Char -> Mon -> Bool --Checks to see if a given variable exists in a monomial, in derivation this is very useful since, ex: d/dx (7y) = 0 since the x is not present
 existsVarMon c (_,s,_) = if (length (filter (\x -> x == c) s) > 0) then True else False
@@ -185,6 +203,10 @@ derivePolyNormalize c p = normPol (derivePoly c (normPol p))
 uiDerivePol :: Char -> Poly -> IO () -- Prints the Polynomial after being derived and normalized, also given the string output format that we have chosen, we need to confirm whether the first monomial is positive or negative otherwise it will not have the "-" in the string
 uiDerivePol c p = if (length dP == 0) then (printPolIO "0") else printPolIO (if (getNum (head (dP)) > 0) then getStrPol (dP) else "-" ++ getStrPol (dP))
   where dP = derivePolyNormalize c p
+
+testDerivePol :: Char -> Poly -> String -- To be used in the tests section to be put inside a `putStr` and show the result of the test to the user
+testDerivePol c p = if (length dP == 0) then ("0") else (if (getNum (head (dP)) > 0) then getStrPol (dP) else "-" ++ getStrPol (dP))
+  where dP = derivePolyNormalize c p  
 
 
 --Parsing String Input into Our Format Section
@@ -225,7 +247,8 @@ getExpFromString (s:sx) = if (ord s >= 97 && ord s <= 122 && (head sx) /= '^') t
 createMon :: String -> Mon --Receives a string and uses auxiliary functions to convert it to a monomial
 createMon s = 
   let var = getVarFromString s
-      num = read (getNumFromString s)::Int
+      num = if (length numString >0) then (if (numString == "-") then -1 else (read (getNumFromString s)::Int)) else 1
+      numString = getNumFromString s
   in if (var=="") then (num,"~",[0]) else (num,getVarFromString s,getExpFromString s)      
 
 createPol :: [String]-> Poly --Receives a list of strings and recursively creates monomials and appends them to generate a polynomial
@@ -303,3 +326,4 @@ programUI = do
 
 
 
+-- QuickCheck seciton
