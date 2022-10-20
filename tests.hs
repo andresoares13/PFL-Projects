@@ -1,5 +1,5 @@
 import Project1 (programUI,testNormPol,testSumPol,testDerivePol,testMulPol,polyParse)
-import Test.QuickCheck
+
 
 tests :: IO ()
 tests = do
@@ -20,7 +20,9 @@ tests = do
               putStr ("2. Polynomial -> (2x^2y^3 + 4x^2 + 8y - 9zx)  deriving in regard to 'x'\n\n" ++ "Result:   " ++ (testDerivePol 'x' (polyParse "2x^2y^3 + 4x^2 + 8y-9zx")) ++ "\n\nExpected:   4xy^3 + 8x - 9z\n\n")
               putStr ("3. Polynomial -> (3x + 4y + 2xy + 1)  deriving in regard to 'x'\n\n" ++ "Result:   " ++ (testDerivePol 'x' (polyParse "3x + 4y + 2xy + 1")) ++ "\n\nExpected:   2y + 3\n\n")
               putStr ("4. Polynomial -> (3x + 4y + 2xy + 1)  deriving in regard to 'y'\n\n" ++ "Result:   " ++ (testDerivePol 'y' (polyParse "3x + 4y + 2xy + 1")) ++ "\n\nExpected:   2x + 4\n\n")
-              putStr ("\n/// Testing Combination of Operations ///\n\n" ++ "1. Polynomial -> (7x - 6y^2 + 4x + 5)  deriving in regard to 'x'\n\n" ++ "Result:   " ++ (testDerivePol 'x' (polyParse "7x - 6y^2 + 4x + 5")) ++ "\n\nExpected:   11\n\n")
+              putStr ("\n/// Testing Combination of Operations ///\n\n" ++ "1. Polynomials -> (2xyz)  +  ((2x^2 + 3y)  *  (3y^3 + 4zx))\n\n" ++ "Result:   " ++ (testSumPol (polyParse (testMulPol (polyParse "2x^2 + 3y") (polyParse "3y^3 + 4zx"))) (polyParse "2xyz")) ++ "\n\nExpected:   9y^4 + 6x^2y^3 + 8x^3z + 14xyz\n\n")
+              putStr ("2. Polynomials -> (80y^2x + 42) + (((norm 8x^2 + 9y - 4z^3 + 7yx - 7yx + 0) deriving in regard to 'x') * (17yx + y^2))\n\n" ++ "Result:   " ++ (testSumPol (polyParse (testMulPol (polyParse (testDerivePol 'x' (polyParse (testNormPol (polyParse "8x^2 +  9y  -   4z^3 +7yx-7yx+0"))))) (polyParse "17yx+   5y^2"))) (polyParse "80y^2x + 42")) ++ "\n\nExpected:   272x^2y + 160xy^2 + 42\n\n")
+              putStr ("\nEnd of testing\nPlease scroll to the top to see all the tests\n\n")
         else
             putStr "\nThank you for using this program!\n"
 

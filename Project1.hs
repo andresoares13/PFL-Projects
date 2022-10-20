@@ -1,7 +1,9 @@
-module Project1 (programUI,testNormPol,testSumPol,testDerivePol,testMulPol,polyParse) where
+module Project1 (programUI,testNormPol,testSumPol,testDerivePol,testMulPol,polyParse, prop_sumMon) where
+
 
 import Data.List
 import Data.Char
+import Test.QuickCheck
 
 
 --Definition of Polynomial and Monomial
@@ -21,7 +23,7 @@ getExpL (_,_,x) = x
 getVar :: Mon -> String --Returns the string of the variable
 getVar (_,s,_) = s
 
-getVarIndex :: Char -> Mon -> Int
+getVarIndex :: Char -> Mon -> Int -- Returns the index of a given variable in the list of exponents
 getVarIndex ch (a,b,c) = snd (head (filter (\(a,b) -> a == ch) (zip b [0..])))
 
 getNum :: Mon -> Int --Returns the number of the monomial, ex: getNum 7*y^2 would return 7
@@ -34,11 +36,17 @@ getVarExpStr ((f,s):ls) = (if (f=='~' || s==0) then "" else [f]++ (if (s>1) then
 
 
 getMonStr :: Mon -> String --Returns the string of the monomial in the required format, ex: getMonStr (7,"x",2) would return 7*x^2
-getMonStr m = ((if (num == 1) then "" else show (num) )++  getVarExpStr (zip (getVar m) (getExpL m) ))
-  where num = abs (getNum m)
+getMonStr m = 
+  let num = abs (getNum m)
+      var = getVar m
+  in ((if (num == 1 && var /= "~") then "" else show (num) )++  getVarExpStr (zip (var) (getExpL m) ))
 
 sumMon :: Mon -> Mon -> Mon --Sums two monomials, this function is only called when both monomials in the input have the same variable and exponent
 sumMon m1 m2 = (getNum m1 + getNum m2,getVar m1, getExpL m1)
+
+prop_sumMon (a,b,c) (x,y,z) = --QuickCheck test that guarantees that the number of the monomial resulting in the sum is the same as the sum of numbers of the two polynomials that were added if the order is swapped
+  (b /= "" && c/=[]) ==>
+  (getNum (getNum (a,b,c) + getNum (x,y,z),getVar (a,b,c), getExpL (a,b,c))) == getNum (x,y,z) + getNum (a,b,c)
 
 
 --Normalization Section -Task a)
@@ -129,7 +137,7 @@ mulMon (a,b,c) (x,y,z) =
 zipVarsExp :: String -> String -> [Int] -> [Int] -> [(Char,Int)] --  returns a list of tuples where the first element is a char of the variable and the other is the exponent of that variable
 zipVarsExp s1 s2 e1 e2 = sortBy (\(a,_) (b,_) -> compare a b) ((zip s1 e1) ++ (zip s2 e2))
 
-normVarsExp :: [(Char,Int)] -> [(Char,Int)]
+normVarsExp :: [(Char,Int)] -> [(Char,Int)] -- Normalizes the list of tuples where the first element is the variable and the second the exponent, needed to sum exponent of equal variables during multiplication
 normVarsExp l = foldl (\acc (a,b) -> if ((pairFilterVar a acc) == []) then acc ++ [(a,b)] else (reversePairFilterVar a acc) ++ [(a,b+ (snd (head (pairFilterVar a acc))))]) [] l
 
 pairFilterVar :: Char -> [(Char, Int)] -> [(Char, Int)] -- Receives a list of tuples (var,Exp) and a char and returns a list containing only the tuples with that char as their var
@@ -181,8 +189,7 @@ existsVarMon :: Char -> Mon -> Bool --Checks to see if a given variable exists i
 existsVarMon c (_,s,_) = if (length (filter (\x -> x == c) s) > 0) then True else False
 
 deleteVar :: Char -> String -> String -- Deletes a given variable from a string, useful when derivating since some variables may disappear
-deleteVar c [] = []
-deleteVar c (s:sx) = if (c == s) then (deleteVar c sx) else [s] ++ deleteVar c sx
+deleteVar c s = filter (\x -> x /= c) s
 
 deleteExp :: Int -> [(Int,Int)] -> [Int] --Deletes a exponent from a string given its index, useful when deriving and the variable is deleted 
 deleteExp _ [] = []
@@ -206,7 +213,8 @@ uiDerivePol c p = if (length dP == 0) then (printPolIO "0") else printPolIO (if 
 
 testDerivePol :: Char -> Poly -> String -- To be used in the tests section to be put inside a `putStr` and show the result of the test to the user
 testDerivePol c p = if (length dP == 0) then ("0") else (if (getNum (head (dP)) > 0) then getStrPol (dP) else "-" ++ getStrPol (dP))
-  where dP = derivePolyNormalize c p  
+  where dP = derivePolyNormalize c p
+
 
 
 --Parsing String Input into Our Format Section
