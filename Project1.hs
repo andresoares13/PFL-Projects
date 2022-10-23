@@ -1,4 +1,7 @@
-module Project1 (programUI,testNormPol,testSumPol,testDerivePol,testMulPol,polyParse, prop_sumMon) where
+--Project file, here you can find the definitions of every function as well as comments explaining how they work
+--If you would like to test, please load the "tests.hs" file and call the funciton "tests"
+
+module Project1 (normPol,sumPol,mulPol,derivePoly,uiNormPol,uiSumPol,uiDerivePol,uiMulPol,programUI,testNormPol,testSumPol,testDerivePol,testMulPol,polyParse, prop_sumMon, prop_mulMon ,prop_deriveMon, prop_normMon) where
 
 
 import Data.List
@@ -10,12 +13,20 @@ import Test.QuickCheck
 
 type Mon = (Int, String, [Int]) -- monomial where the first member is the number, the second the variable and the third the exponent, ex 7*y^2 = (7,"y",2)
 type Poly = [Mon] -- polynomial which is a list of one or more monomials    
---By convention, a polynomial like 7 (doesn't have a variable) will be written like (7,"~",0)
+--By convention, a polynomial like 7 (doesn't have a variable) will be written like (7,"~",0), this is useful when we are sorting the monomials of a polynomial to print it since this character's ord '~' is higher than the ord of the letter characters
 
 --Basic Monomials operations / getters Section
 
 getExp :: Char -> Mon -> Int --Returns the value of the exponent given the varibale
 getExp x (_,v,l) = snd (head (filter (\(a,_) -> a == x) (zip v l))) 
+
+getExpI :: Int -> Mon -> Int --Returns the value of the exponent given its index
+getExpI n (_,_,l) = fst (head (filter (\(_,b) -> b == n) (zip l [0..])))
+
+addToExp :: Int -> Int -> Int -> [Int] -> [Int] --Receives a step(like a i=0 in iteration), a number and an index and a list, and adds that number in the list in the place given by the index and returns the final list
+addToExp s n i [] = []
+addToExp s n i (l:ls) = if (s==i) then [l+n] ++ addToExp (s+1) n i ls else [l] ++ addToExp (s+1) n i (ls)
+
 
 getExpL :: Mon -> [Int] --Returns the list of exponents
 getExpL (_,_,x) = x
@@ -51,7 +62,7 @@ prop_sumMon (a,b,c) (x,y,z) = --QuickCheck test that guarantees that the number 
 
 --Normalization Section -Task a)
 
-normPol :: Poly -> Poly --Normalizes the Polynomial by removing zeros, sorting and adding all of the monomials that can be summed
+normPol :: Poly -> Poly --Normalizes the Polynomial by removing zeros, sorting and adding all of the monomials that can be summed, uses auxiliary functions to know whether or not two monomials can be added (filters for the same varibales and exponents) 
 normPol p = removeZeros (foldl (\acc m -> if (length (filterVarAndExp acc m) == 0) then acc ++ [m] else (reverseFilterVarAndExp acc m) ++ [sumMon m (head (filterVarAndExp acc m))]  ) [] (sortPolyVars (sortPol (removeZeros p))))
 
 sortPol :: Poly -> Poly -- Sorts the Polynomial first by the letter of the variable in alphabaetic order and then by the exponent in descending order
@@ -69,7 +80,9 @@ testNormPol :: Poly -> String -- To be used in the tests section to be put insid
 testNormPol p = if (length nP == 0) then ("0") else (if (getNum (head (nP)) > 0) then (getStrPol (nP)) else "-" ++ getStrPol (nP))
   where nP = normPol p  
 
-
+prop_normMon p = 
+  (p /= [] && length p == 1 && getExpL (head p) /= [] && getVar (head p) /= "" && getNum (head p) /= 0 && length (getExpL (head p)) == length (getVar (head p)) && length (getExpL (head p)) == 1) ==>
+  (normPol p) == p
 
 --Helper functions section that filter in and out given variables so that we have polynomials with only those and without those vars
 
@@ -173,6 +186,10 @@ testMulPol p1 p2 = if (length mP == 0) then ("0") else (if (getNum (head (mP)) >
   where mP = normPol (mulPol p1 p2)
 
 
+prop_mulMon (a,b,c) (x,y,z) = --QuickCheck test that guarantees that the number of the monomial resulting in the multiplication is the same as the multiplication of numbers of the two polynomials that were multiplied if the order is swapped
+  (b /= "" && c /= [] && y /= "" && c/= []) ==>
+  getNum (mulMon (a,b,c) (x,y,z)) == (getNum (x,y,z)) * (getNum (a,b,c))
+
 
 
 --Derivation Section -Task d)
@@ -215,6 +232,10 @@ testDerivePol :: Char -> Poly -> String -- To be used in the tests section to be
 testDerivePol c p = if (length dP == 0) then ("0") else (if (getNum (head (dP)) > 0) then getStrPol (dP) else "-" ++ getStrPol (dP))
   where dP = derivePolyNormalize c p
 
+
+prop_deriveMon x (a,b,c) = --Uses quickCheck to test if when deriving in respect to a variable diferent than the one in the monomial, the result is 0 or not; note that due to the filtering conditions to test this, most auto generated tests are discarded
+  (b /= "" && c /= [] && length b == 1 && head b /= x) ==>
+  getNum (deriveMon x (a,b,c)) == 0
 
 
 --Parsing String Input into Our Format Section
@@ -263,8 +284,16 @@ createPol :: [String]-> Poly --Receives a list of strings and recursively create
 createPol [] = []
 createPol (l:ls) = [createMon l] ++ createPol ls
 
+normRepeatedVars :: Poly -> Poly --Goes recursively through the polynomial and calls its aux function that normalizes varibales inside a monomial, ex: (7,"xx",[1,2]) -> (7,"x",[3])
+normRepeatedVars [] = []
+normRepeatedVars (l:ls) = [normRepeatedVarsAux l] ++ normRepeatedVars ls
+
+normRepeatedVarsAux :: Mon -> Mon --Uses fold to add to the monomial acc (the (a,"",[])) the variables in the given monomial, but if the variable already exists, then it adds the exponent to the existing exponent in the list of exponents, ex: (7,"xxyx",[1,2,1,1]) -> (7,"xy",[4,1]), this fixes the problem of repetition of variables in the input
+normRepeatedVarsAux (a,b,c) = foldl (\(i,j,k) x -> if (length (filter (\y -> x == y) j) == 0) then (i,j ++ [x],k ++ [(getExp x (a,b,c))]) else (i,j,  addToExp 0 (getExpI (length j) (a,b,c)) (getVarIndex x (i,j,k)) k)) (a,"",[]) b
+
+
 polyParse :: String -> Poly --Receives a string and converts it into a list of strings containing each member of the future polynomial and then converts that list into a polynomial
-polyParse s = createPol (strSplit (removeSpaces s))
+polyParse s = normRepeatedVars (createPol (strSplit (removeSpaces s)))
 
 
 -- User Interface Section
@@ -332,6 +361,3 @@ programUI = do
           putStr "\nThank you for using this program!\n"   
 
 
-
-
--- QuickCheck seciton
