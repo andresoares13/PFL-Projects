@@ -53,4 +53,21 @@ movePiece(Board,X,Y,X2,Y2,Finalboard) :-
 
 
 
-    
+go:- 
+    prompt(_, ''),
+    tabuleiro(Board),
+    reverse(Board,Temp),
+    printBoard(Temp),nl ,
+    loop(start,Board),  
+    loop(end,Board).   
+loop(A,Board) :- 
+    A\=end,
+    write('Position of your piece X: '), 
+    read(X),
+    write('Position of your piece Y: '),
+    read(Y),   
+    write('Desired position X: '), 
+    read(X2),
+    write('Desired position Y: '),
+    read(Y2), 
+    nl,movePiece(Board,X,Y,X2,Y2,Newboard),nl, loop(X,Newboard).  
