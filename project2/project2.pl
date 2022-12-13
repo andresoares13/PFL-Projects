@@ -1,4 +1,4 @@
-tabuleiro([['X ','D2','D3','D4','D5'],['X ','X ','X ','X ','X '],['X ','X ','X ','X ','X '],['X ','X ','X ','X ','X '],['d1','d2','d3','d4','d5']]).
+tabuleiro([['D1','D2','D3','D4','D5'],['X ','X ','X ','X ','X '],['X ','X ','X ','X ','X '],['X ','X ','X ','X ','X '],['d1','d2','d3','d4','d5']]).
 :- use_module(library(lists)).
 % piece(Type,Player,Pos).
 % type can be D or S, Player can be 1 or 2, Pos is [X,Y] where X and Y are between 1 and 5 
@@ -29,10 +29,11 @@ printBorderLine(L) :-
 
 
 
-drawGame(Board) :-
+drawGame(Board,Move,Player,Length) :-
     nl,nl,nl,
-    nth1(1,Board,Line),
-    length(Line,Length),
+    write('                                   Ugly Duck'),nl,nl,
+    write('                                    Move: '),write(Move),nl,nl,
+    write('                                  Player No: '),write(Player),nl,nl,
     LineLength is Length * 2,
     write('                        '),
     printBorderLine(LineLength), % prints the border line on top of the board
@@ -117,12 +118,15 @@ checkStateSwan(Board,Player,NewBoard) :-
     setPiece(Board,X,LineNr,Swan,NewBoard).
 
 checkStateSwan(Board,_,Board).        
+
+incrementMove(Move,NewMove) :-
+    NewMove is Move + 1.
     
 
 
 
 
-checkInputPiece(_,'.',_,_).
+checkInputPiece(_,'.',_,_) :- menu.
 
 checkInputPiece(Board,Piece,Player,NewPiece) :-
     Piece @> '0',
@@ -138,7 +142,7 @@ checkInputPiece(Board,Piece,Player,NewPiece) :-
 checkInputPiece(Board,Piece,Player,_) :-
     Piece @< '1',
     nl,nl,write('Could not find that piece, Please choose an existing piece'),nl,nl,
-    loop(Piece,Board,Player).
+    gameLoop(Board,Player).
 
 checkInputPiece(Board,Piece,Player,_) :-
     nth1(1,Board,Line),
@@ -147,27 +151,45 @@ checkInputPiece(Board,Piece,Player,_) :-
     char_code(Char,L),
     Piece @> Char,
     nl,nl,write('Could not find that piece, Please choose an existing piece'),nl,nl,
-    loop(Piece,Board,Player).    
+    gameLoop(Board,Player).    
 
 checkInputPiece(Board,Piece,Player,_) :-
     convertPiece(Piece,Player,NewPiece), 
     \+ getPiece(Board,_,_,NewPiece),
     nl,nl,write('That piece was captured, Please choose an existing piece'),nl,nl,
-    loop(Piece,Board,Player).    
+    gameLoop(Board,Player).    
 
 
     
 
 go:- 
     prompt(_, ''),
-    tabuleiro(Board),
-    drawGame(Board),
-    loop(start,Board,1),  
-    loop('end',Board,1).   
+    menu.
 
-loop(A,Board,Player) :- 
-    A\='end',
-    write('Player No '),write(Player),nl,
+
+menu:-
+    nl,nl,write('                         Ugly Duck'),write('            __'),nl,
+    write('                                            <(o )___'),nl,
+    write('                         Main Menu'),write('           ( ._> /'),nl,
+    write('                                              `---`'),nl,
+    nl,nl,write('                    Pick an option (1-4)'),nl,nl,
+    write('                      1. Play Game'),nl,nl,
+    write('                      2. Change Settings'),nl,nl,
+    write('                      3. Instructions'),nl,nl,
+    write('                      4. Exit'),nl,nl,
+    get_char(Option),
+    get_char(_),
+    menuController(Option).
+
+
+menuController('1') :-
+    tabuleiro(Board),
+    drawGame(Board,1,1,5),
+    gameLoop(Board,1,1,5).
+
+menuController('4') :- halt.    
+
+gameLoop(Board,Player,Move,Length) :- 
     write('Choose your piece: '), 
     get_char(Piece),
     get_char(_),   
@@ -179,10 +201,8 @@ loop(A,Board,Player) :-
     get_code(Y),
     get_char(_),
     convertPos(X,Y,X2,Y2),
-    nl,movePiece(Board,NewPiece,X2,Y2,Player,Finalboard),nl,changePlayer(Player,NewPlayer),drawGame(Finalboard),
-    loop(X2,Finalboard,NewPlayer).
-    
-
-
-
-
+    movePiece(Board,NewPiece,X2,Y2,Player,Finalboard),
+    changePlayer(Player,NewPlayer),
+    incrementMove(Move,NewMove),nl,nl,
+    drawGame(Finalboard,NewMove,NewPlayer,Length),
+    gameLoop(Finalboard,NewPlayer,NewMove,Length).
