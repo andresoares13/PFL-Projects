@@ -1,4 +1,4 @@
-tabuleiro([['D1','D2','D3','D4','D5'],['X ','X ','X ','X ','X '],['X ','X ','X ','X ','X '],['X ','X ','X ','X ','X '],['d1','d2','d3','d4','d5']]).
+tabuleiro([['X ','D2','D3','D4','D5'],['X ','X ','X ','X ','X '],['X ','D1','X ','X ','X '],['X ','X ','X ','X ','X '],['d1','d2','d3','d4','d5']]).
 :- use_module(library(lists)).
 % piece(Type,Player,Pos).
 % type can be D or S, Player can be 1 or 2, Pos is [X,Y] where X and Y are between 1 and 5 
@@ -126,9 +126,9 @@ incrementMove(Move,NewMove) :-
 
 
 
-checkInputPiece(_,'.',_,_) :- menu.
+checkInputPiece(_,'.',_,_,_,_) :- menu.
 
-checkInputPiece(Board,Piece,Player,NewPiece) :-
+checkInputPiece(Board,Piece,Player,NewPiece,_,_) :-
     Piece @> '0',
     nth1(1,Board,Line),
     length(Line,Length),
@@ -139,25 +139,114 @@ checkInputPiece(Board,Piece,Player,NewPiece) :-
     convertPiece(Piece,Player,NewPiece), 
     getPiece(Board,_,_,NewPiece). % test to see if the piece is still alive
 
-checkInputPiece(Board,Piece,Player,_) :-
+checkInputPiece(Board,Piece,Player,_,Move,Length) :-
     Piece @< '1',
     nl,nl,write('Could not find that piece, Please choose an existing piece'),nl,nl,
-    gameLoop(Board,Player).
+    gameLoop(Board,Player,Move,Length).
 
-checkInputPiece(Board,Piece,Player,_) :-
+checkInputPiece(Board,Piece,Player,_,Move,Length) :-
     nth1(1,Board,Line),
     length(Line,Length),
     number_codes(Length,[L|_]),
     char_code(Char,L),
     Piece @> Char,
     nl,nl,write('Could not find that piece, Please choose an existing piece'),nl,nl,
-    gameLoop(Board,Player).    
+    gameLoop(Board,Player,Move,Length).    
 
-checkInputPiece(Board,Piece,Player,_) :-
+checkInputPiece(Board,Piece,Player,_,Move,Length) :-
     convertPiece(Piece,Player,NewPiece), 
     \+ getPiece(Board,_,_,NewPiece),
     nl,nl,write('That piece was captured, Please choose an existing piece'),nl,nl,
-    gameLoop(Board,Player).    
+    gameLoop(Board,Player,Move,Length).   
+
+
+translateMove('q',-1,1).
+translateMove('w',0,1).
+translateMove('e',1,1).
+translateMove('a',-1,-1).
+translateMove('s',0,-1).
+translateMove('d',1,-1).
+
+validPlayerPieceMove(1,'S','a').
+validPlayerPieceMove(1,'S','s').
+validPlayerPieceMove(1,'S','d').
+validPlayerPieceMove(1,'D','q').
+validPlayerPieceMove(1,'D','w').
+validPlayerPieceMove(1,'D','e').
+validPlayerPieceMove(2,'s','q').
+validPlayerPieceMove(2,'s','w').
+validPlayerPieceMove(2,'s','e').
+validPlayerPieceMove(2,'d','a').
+validPlayerPieceMove(2,'d','s').
+validPlayerPieceMove(2,'d','d').
+
+
+
+checkInputMove(Board,Piece,Player,Move,X2,Y2,Length,_) :-
+    translateMove(Move,Xdif,Ydif),
+    getPiece(Board,Xi,Yi,Piece),
+    atom_chars(Piece,[Letter|_]),
+    validPlayerPieceMove(Player,Letter,Move),
+    Xsum is Xi + Xdif,
+    Xsum > 0,
+    Xsum < Length + 1,
+    Ysum is Yi + Ydif,
+    Ysum > 0,
+    length(Board,Height),
+    Ysum < Height + 1,
+    number_codes(Xsum,[XsumA|_]),
+    number_codes(Ysum,[YsumA|_]),
+    convertPos(XsumA,YsumA,X2,Y2).
+
+checkInputMove(Board,_,Player,Move,_,_,Length,GameMove) :-
+    \+translateMove(Move,_,_),
+    nl,nl,write('That move does not exist'),nl,nl,
+    gameLoop(Board,Player,GameMove,Length).
+
+checkInputMove(Board,Piece,Player,Move,_,_,Length,GameMove) :-
+    atom_chars(Piece,[Letter|_]),
+    \+validPlayerPieceMove(Player,Letter,Move),
+    nl,nl,write('That move is not valid'),nl,nl,
+    gameLoop(Board,Player,GameMove,Length).
+
+checkInputMove(Board,Piece,Player,Move,_,_,Length,GameMove) :-
+    translateMove(Move,Xdif,_),
+    getPiece(Board,Xi,_,Piece),
+    Xsum is Xi + Xdif,
+    Xsum =< 0,
+    nl,nl,write('That move is not valid'),nl,nl,
+    gameLoop(Board,Player,GameMove,Length).
+
+
+checkInputMove(Board,Piece,Player,Move,_,_,Length,GameMove) :-
+    translateMove(Move,Xdif,_),
+    getPiece(Board,Xi,_,Piece),
+    Xsum is Xi + Xdif,
+    Xsum > Length,
+    nl,nl,write('That move is not valid'),nl,nl,
+    gameLoop(Board,Player,GameMove,Length).
+
+
+checkInputMove(Board,Piece,Player,Move,_,_,Length,GameMove) :-
+    translateMove(Move,_,Ydif),
+    getPiece(Board,_,Yi,Piece),
+    Ysum is Yi + Ydif,
+    Ysum =< 0,
+    nl,nl,write('That move is not valid'),nl,nl,
+    gameLoop(Board,Player,GameMove,Length).
+
+checkInputMove(Board,Piece,Player,Move,_,_,Length,GameMove) :-
+    translateMove(Move,_,Ydif),
+    getPiece(Board,_,Yi,Piece),
+    Ysum is Yi + Ydif,
+    length(Board,Height),
+    Ysum > Height,
+    nl,nl,write('That move is not valid'),nl,nl,
+    gameLoop(Board,Player,GameMove,Length).    
+
+
+    
+
 
 
     
@@ -193,14 +282,11 @@ gameLoop(Board,Player,Move,Length) :-
     write('Choose your piece: '), 
     get_char(Piece),
     get_char(_),   
-    checkInputPiece(Board,Piece,Player,NewPiece),
-    write('Desired position X: '), 
-    get_code(X),
+    checkInputPiece(Board,Piece,Player,NewPiece,Move,Length),
+    write('Choose your move: '), 
+    get_char(PlayerMove),
     get_char(_),
-    write('Desired position Y: '),
-    get_code(Y),
-    get_char(_),
-    convertPos(X,Y,X2,Y2),
+    checkInputMove(Board,NewPiece,Player,PlayerMove,X2,Y2,Length,Move),
     movePiece(Board,NewPiece,X2,Y2,Player,Finalboard),
     changePlayer(Player,NewPlayer),
     incrementMove(Move,NewMove),nl,nl,
