@@ -295,6 +295,14 @@ menuController('3') :-
 
 menuController('4') :- halt.    
 
+menuController(_) :-
+    nl,write('             Invalid Input, Please Try Again!  '),nl,
+    get_char(Option),
+    get_char(_),
+    menuController(Option).
+
+
+
 instructionsController('0'):-
     prompt(_, ''),
     menu.
