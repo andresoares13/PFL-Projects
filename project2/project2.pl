@@ -276,7 +276,36 @@ menuController('1') :-
     drawGame(Board,1,1,5),
     gameLoop(Board,1,1,5).
 
+menuController('3') :-
+    nl,nl,write('                         Ugly Duck'),write('            __'),nl,
+    write('                                            <(o )___'),nl,
+    write('                         Instructions'),write('           ( ._> /'),nl,
+    write('                                              `---`'),nl,nl,
+    write('     DUCK: A duck moves one cell orthogonal and diagonal forward'),nl,
+    write('        - Ducks capture diagonal forward. Captures are not mandatory.'),nl,
+    write('        - A duck reaching last row is promoted to a swan.'),nl,nl,
+    write('     SWAN: A swan moves one cell orthogonal and diagonal backward'),nl,
+    write('        - Swans capture diagonal backward. Captures are not mandatory.'),nl,nl,
+    write('     GOAL: Wins the player who first moves a swan into his first row.'),nl,nl,nl,
+    write('                     0. Go Back to Main Menu'),nl,nl,
+    write('                     1. Exit'),nl,nl,
+    get_char(Option),
+    get_char(_),
+    instructionsController(Option).
+
 menuController('4') :- halt.    
+
+instructionsController('0'):-
+    prompt(_, ''),
+    menu.
+instructionsController('1'):-
+    halt.
+instructionsController(_):-
+    nl,nl,write('             Invalid Input, Please Try Again!  '),nl,nl,
+    get_char(Option),
+    get_char(_),
+    instructionsController(Option).
+
 
 gameLoop(Board,Player,Move,Length) :- 
     write('Choose your piece: '), 
