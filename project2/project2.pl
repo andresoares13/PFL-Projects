@@ -1,4 +1,4 @@
-tabuleiro([['X ','D2','D3','D4','D5'],['X ','X ','X ','X ','X '],['X ','D1','X ','X ','X '],['X ','X ','X ','X ','X '],['d1','d2','d3','d4','d5']]).
+tabuleiro([['D1','D2','D3','D4','D5'],['X ','X ','X ','X ','X '],['X ','X ','X ','X ','X '],['X ','X ','X ','X ','X '],['d1','d2','d3','d4','d5']]).
 :- use_module(library(lists)).
 % piece(Type,Player,Pos).
 % type can be D or S, Player can be 1 or 2, Pos is [X,Y] where X and Y are between 1 and 5 
@@ -99,8 +99,14 @@ convertPos(X,Y,X2,Y2) :-
 convertPiece(Piece,1,NewPiece) :-
     atom_concat('D',Piece,NewPiece).
 
+convertPiece(Piece,1,NewPiece) :-
+    atom_concat('S',Piece,NewPiece).    
+
 convertPiece(Piece,2,NewPiece) :-
-    atom_concat('d',Piece,NewPiece).    
+    atom_concat('d',Piece,NewPiece).
+
+convertPiece(Piece,2,NewPiece) :-
+    atom_concat('s',Piece,NewPiece).          
     
 changePlayer(1,2).
 changePlayer(2,1).
@@ -118,6 +124,21 @@ checkStateSwan(Board,Player,NewBoard) :-
     setPiece(Board,X,LineNr,Swan,NewBoard).
 
 checkStateSwan(Board,_,Board).        
+
+
+
+playerEnd(1,1,'S').
+playerEnd(2,5,'s').
+
+
+checkStateEnd(Board,Player) :-
+    playerEnd(Player,LineNr,Letter),
+    nth1(LineNr,Board,Line),
+    member(M,Line),
+    sub_atom(M,0,_,_,Letter),
+    winner(Player).
+
+checkStateEnd(_,_).    
 
 incrementMove(Move,NewMove) :-
     NewMove is Move + 1.
@@ -260,7 +281,7 @@ menu:-
     nl,nl,write('                         Ugly Duck'),write('            __'),nl,
     write('                                            <(o )___'),nl,
     write('                         Main Menu'),write('           ( ._> /'),nl,
-    write('                                              `---`'),nl,
+    write('                                              `---'),write('\x00b4\'),nl,
     nl,nl,write('                    Pick an option (1-4)'),nl,nl,
     write('                      1. Play Game'),nl,nl,
     write('                      2. Change Settings'),nl,nl,
@@ -279,7 +300,7 @@ menuController('1') :-
 menuController('3') :-
     nl,nl,write('                         Ugly Duck'),write('            __'),nl,
     write('                                            <(o )___'),nl,
-    write('                         Instructions'),write('           ( ._> /'),nl,
+    write('                         Instructions'),write('        ( ._> /'),nl,
     write('                                              `---`'),nl,nl,
     write('     DUCK: A duck moves one cell orthogonal and diagonal forward'),nl,
     write('        - Ducks capture diagonal forward. Captures are not mandatory.'),nl,
@@ -293,14 +314,13 @@ menuController('3') :-
     get_char(_),
     instructionsController(Option).
 
-menuController('4') :- halt.    
+menuController('4') :- halt.
 
 menuController(_) :-
     nl,write('             Invalid Input, Please Try Again!  '),nl,
     get_char(Option),
     get_char(_),
     menuController(Option).
-
 
 
 instructionsController('0'):-
@@ -315,6 +335,10 @@ instructionsController(_):-
     instructionsController(Option).
 
 
+winner(Player) :-
+    nl,nl,write('          Player '),write(Player),write('won'),nl,nl,
+    menu.
+
 gameLoop(Board,Player,Move,Length) :- 
     write('Choose your piece: '), 
     get_char(Piece),
@@ -325,6 +349,7 @@ gameLoop(Board,Player,Move,Length) :-
     get_char(_),
     checkInputMove(Board,NewPiece,Player,PlayerMove,X2,Y2,Length,Move),
     movePiece(Board,NewPiece,X2,Y2,Player,Finalboard),
+    checkStateEnd(Finalboard,Player),
     changePlayer(Player,NewPlayer),
     incrementMove(Move,NewMove),nl,nl,
     drawGame(Finalboard,NewMove,NewPlayer,Length),
