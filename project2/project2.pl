@@ -1,46 +1,58 @@
-tabuleiro([['D1','D2','D3','D4','D5'],['X ','X ','X ','X ','X '],['X ','X ','X ','X ','X '],['X ','X ','X ','X ','X '],['d1','d2','d3','d4','d5']]).
+tabuleiro([['D1','D2','D3','D4','D5'],['  ','  ','  ','  ','  '],['  ','  ','  ','  ','  '],['  ','  ','  ','  ','  '],['d1','d2','d3','d4','d5']]).
 :- use_module(library(lists)).
+:- consult(draw).
 % piece(Type,Player,Pos).
 % type can be D or S, Player can be 1 or 2, Pos is [X,Y] where X and Y are between 1 and 5 
 
-printBoard([]) :-
-    nl.
-printBoard([Row|Tail]) :-
-    nl,
-    write('                         |  '),
-    printRow(Row),
-    write('  |'),
-    nl,
-    printBoard(Tail).
-
-printRow([]).
-printRow([E]) :-
-    write(E).
-printRow([El|Tail]) :-
-    write(El),
-    write('   '),
-    printRow(Tail).
-
-printBorderLine(0).
-printBorderLine(L) :-
-    L1 is L - 1,
-    write(' - '),
-    printBorderLine(L1).
 
 
+createBoardSpaces(Board,_,0,Board).
+createBoardSpaces(Board,Length,Height,NewBoard) :-
+    Height > 0,
+    H is Height - 1,
+    createRowSpaces([],Length,NewRow),
+    append(Board,[NewRow],Board2),
+    createBoardSpaces(Board2,Length,H,NewBoard).
 
-drawGame(Board,Move,Player,Length) :-
-    nl,nl,nl,
-    write('                                   Ugly Duck'),nl,nl,
-    write('                                    Move: '),write(Move),nl,nl,
-    write('                                  Player No: '),write(Player),nl,nl,
-    LineLength is Length * 2,
-    write('                        '),
-    printBorderLine(LineLength), % prints the border line on top of the board
-    reverse(Board,Boardprint), % the reverse is so that the print can be seen correctly in the console
-    nl,printBoard(Boardprint),
-    write('                        '),printBorderLine(LineLength),
-    nl,nl,nl,nl.
+
+createRowSpaces(Row,0,Row).
+createRowSpaces(Row,Length,NewRow) :-
+    Length > 0,
+    L is Length - 1,
+    append(Row,['  '], Row2),
+    createRowSpaces(Row2,L,NewRow).
+
+
+createPlayer1(Row,0,_,Row).
+createPlayer1(Row,Length,Counter,NewRow) :-
+    Length > 0,
+    number_codes(Counter,Code),
+    atom_codes(A,Code),
+    atom_concat('D',A,Duck),
+    C is Counter + 1,
+    L is Length - 1,
+    append(Row,[Duck],Row2),
+    createPlayer1(Row2,L,C,NewRow).
+
+createPlayer2(Row,0,_,Row).
+createPlayer2(Row,Length,Counter,NewRow) :-
+    Length > 0,
+    number_codes(Counter,Code),
+    atom_codes(A,Code),
+    atom_concat('d',A,Duck),
+    C is Counter + 1,
+    L is Length - 1,
+    append(Row,[Duck],Row2),
+    createPlayer2(Row2,L,C,NewRow).
+
+
+createBoard(Length,Height,Board) :-
+    createPlayer1([],Length,1,NewRow),
+    createBoardSpaces([NewRow],Length,Height,NewBoard),
+    createPlayer2([],Length,1,NewRow2),
+    append(NewBoard,[NewRow2],Board).
+
+
 
 
 replace_at_index(X,Y,List,Index,NewList) :-
@@ -69,7 +81,7 @@ setPiece(Board,X,Y,Piece,Newboard) :-
 clearPiece(Board,X,Y,Newboard) :-
     nth1(Y,Board,Line),
     nth1(X,Line,X1),
-    replace_at_index(X1,'X ',Line,X,NewLine),
+    replace_at_index(X1,'  ',Line,X,NewLine),
     replace_at_index(Line,NewLine,Board,Y,Newboard).
 
 movePiece(Board,Piece,X2,Y2,Player,SwanBoard) :-
@@ -272,7 +284,7 @@ checkInputMove(Board,Piece,Player,Move,_,_,Length,GameMove) :-
 
     
 
-go:- 
+play:- 
     prompt(_, ''),
     menu.
 
@@ -336,7 +348,7 @@ instructionsController(_):-
 
 
 winner(Player) :-
-    nl,nl,write('          Player '),write(Player),write('won'),nl,nl,
+    nl,nl,write('                                Player '),write(Player),write(' won'),nl,nl,
     menu.
 
 gameLoop(Board,Player,Move,Length) :- 
@@ -354,3 +366,6 @@ gameLoop(Board,Player,Move,Length) :-
     incrementMove(Move,NewMove),nl,nl,
     drawGame(Finalboard,NewMove,NewPlayer,Length),
     gameLoop(Finalboard,NewPlayer,NewMove,Length).
+
+
+
