@@ -7,6 +7,9 @@ input_number(Acc, Number) :-
     (   Code >= 48, Code =< 57
     ->  Acc1 is Acc * 10 + (Code - 48),
         input_number(Acc1, Number)
+    ;   Code = 46
+    ->  get_code(_),
+        menu
     ;   Code >= 65, Code =< 90
     ->  flush_output,
         input_number(0, Number)
@@ -124,7 +127,8 @@ ownPiece(Board,X,Y,Player) :-
 
 % Controls the input of the desired move
 
-
+checkInputMove(_,_,_,'.',_,_,_,_) :-
+    menu.
 
 checkInputMove(Board,Piece,Player,Move,Xsum,Ysum,Length,_) :-
     valid_moves(Board-Length-Piece,Player,MoveList),
@@ -133,9 +137,6 @@ checkInputMove(Board,Piece,Player,Move,Xsum,Ysum,Length,_) :-
     getPiece(Board,Xi,Yi,Piece,Player,_),
     Xsum is Xi + Xdif,
     Ysum is Yi + Ydif.
-
-
-
 
 
 checkInputMove(Board,_,Player,Move,_,_,Length,GameMove) :-

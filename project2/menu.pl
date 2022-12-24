@@ -18,6 +18,7 @@ menuController('1') :-
     write('                      1. Player VS Player'),nl,nl,
     write('                      2. Player VS Computer'),nl,nl,
     write('                      3. Computer VS Computer'),nl,nl,
+    write('                      4. Go Back to Main Menu'),nl,nl,
     get_char(Option),
     get_char(_),
     playController(Option).
@@ -44,6 +45,8 @@ menuController('3') :-
     write('     SWAN: A swan moves one cell orthogonal and diagonal backward'),nl,
     write('        - Swans capture diagonal backward. Captures are not mandatory.'),nl,nl,
     write('     GOAL: Wins the player who first moves a swan into his first row.'),nl,nl,nl,
+    write('     If at any point during the game you wish to go back to the main menu,'),nl,
+    write('       just enter . (period) when asked for the piece or for the move.'),nl,nl,nl,
     write('                     0. Go Back to Main Menu'),nl,nl,
     write('                     1. Exit'),nl,nl,
     get_char(Option),
@@ -80,11 +83,14 @@ playController('2') :-
 playController('3') :- menu.
 
 
+playController('4') :- menu.
+
+
 playController(_):-
     nl,nl,write('             Invalid Input, Please Try Again!  '),nl,nl,
     get_char(Option),
     get_char(_),
-    instructionsController(Option).
+    playController(Option).
 
 
 instructionsController('0'):-

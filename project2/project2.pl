@@ -287,7 +287,7 @@ gameLoopHumanComputer :-
     convertNumberToAtom(NumberPiece,Piece),
     checkInputPiece(Board,Piece,Player,NewPiece,Move,Length),
     write('Choose your move: '), 
-    get_char(PlayerMove),
+    get_char(PlayerMove),write(PlayerMove),
     skip_line,
     checkInputMove(Board,NewPiece,Player,PlayerMove,X2,Y2,Length,Move),
     movePiece(Board,NewPiece,X2,Y2,Player,Finalboard),
