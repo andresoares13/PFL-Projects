@@ -80,7 +80,13 @@ playController('2') :-
     gameLoopHumanComputer.
 
 
-playController('3') :- menu.
+playController('3') :- 
+    retract(boardSettings(Length-Height)),
+    createBoard(Length,Height,Board),
+    display_game(Board-1-1-Length),
+    asserta(state(Board-1-1-Length)),
+    asserta(boardSettings(Length-Height)),
+    gameLoopComputerComputer.
 
 
 playController('4') :- menu.

@@ -1,5 +1,6 @@
 :- use_module(library(lists)).
 :- use_module(library(random)).
+:- use_module(library(system)).
 :- consult(draw).
 :- consult(input).
 :- consult(menu).
@@ -144,7 +145,6 @@ checkStateSwan(Board,Player,NewBoard) :-
     nth1(LineNr,Board,Line),
     member(M,Line),
     sub_atom(M,0,_,_,Letter),
-    write('Letter: '),write(Letter),
     nth1(X,Line,M),
     evolvePiece(M,Swan,Player),
     setPiece(Board,X,LineNr,Swan,NewBoard).
@@ -300,6 +300,20 @@ gameLoopHumanComputer :-
     display_game(ComputerBoard-ComputerMove-Player-Length),
     asserta(state(ComputerBoard-Player-ComputerMove-Length)),
     asserta(level(Level)),
+    fail.
+
+gameLoopComputerComputer :-
+    repeat,
+    retract(state(Board-Player-Move-Length)),
+    retract(level(Level)),
+    asserta(level(Level)),
+    sleep(2),
+    computerMove(Board-Length,Player,Level,ComputerBoard),
+    checkStateEnd(ComputerBoard,Player),
+    incrementMove(Move,ComputerMove),nl,nl,
+    changePlayer(Player,NewPlayer),
+    display_game(ComputerBoard-ComputerMove-NewPlayer-Length),
+    asserta(state(ComputerBoard-NewPlayer-ComputerMove-Length)),
     fail.
    
 

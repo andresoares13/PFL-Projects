@@ -1,3 +1,27 @@
+writeColor(Element) :-
+    getFirstLetter(Element,Letter),
+    writeColorAux(Letter,Element).
+
+writeColorAux('D',Element) :-
+    format("\e[32m~w\e[0m", [Element]),
+    flush_output.
+
+writeColorAux('d',Element) :-
+    format("\e[31m~w\e[0m", [Element]),
+    flush_output.
+
+writeColorAux('S',Element) :-
+    format("\e[32;1m~w\e[0m", [Element]),
+    flush_output.
+
+writeColorAux('s',Element) :-
+    format("\e[31;1m~w\e[0m", [Element]),
+    flush_output.
+
+writeColorAux(' ',Element) :-
+    write(Element).
+
+
 printBoard([],_) :-
     nl.
 
@@ -43,7 +67,8 @@ printRowAux([E]) :-
     AL > 2,
     last_two_digits(E,'10'),
     write(' '),
-    write(E),write(' ').
+    writeColor(E),
+    write(' ').
 
 printRowAux([E]) :-
     atom_length(E,AL),
@@ -51,7 +76,8 @@ printRowAux([E]) :-
     last_two_digits(E,Last),
     Last @> '10',
     write('  '),
-    write(E),write(' ').    
+    writeColor(E),
+    write(' ').    
    
 
 printRowAux([El|Tail]) :-
@@ -62,7 +88,8 @@ printRowAux([El|Tail]) :-
     last_two_digits(El,Last),
     Last @> '10',
     write('  '),
-    write(El),write(' '),
+    writeColor(El),
+    write(' '),
     write('\x2503\'),
     printRowAux(Tail).  
 
@@ -73,7 +100,8 @@ printRowAux([El|Tail]) :-
     AL > 2,
     write(' '),
     last_two_digits(El,'10'),
-    write(El),write(' '),
+    writeColor(El),
+    write(' '),
     write('\x2503\'),
     printRowAux(Tail).  
 
@@ -84,14 +112,15 @@ printRowAux([E]) :-
     atom_length(E,AL),
     AL < 3,
     write(' '),
-    write(E),write('  ').
+    writeColor(E),
+    write('  ').
 printRowAux([El|Tail]) :-
     length([El|Tail],L),
     L > 1,
     atom_length(El,AL),
     AL < 3,
     write(' '),
-    write(El),
+    writeColor(El),
     write('  '),write('\x2503\'),write(' '),
     printRowAux(Tail).
 
