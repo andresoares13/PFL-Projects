@@ -165,7 +165,7 @@ printBorderLineFinalAux(L) :-
     write('\x2501\'),
     printBorderLineFinalAux(L1).
 
-drawGame(Board,Move,Player,Length) :-
+display_game(Board-Move-Player-Length) :-
     nl,nl,nl,
     write('                                   Ugly Duck'),nl,nl,
     write('                                    Move: '),write(Move),nl,nl,

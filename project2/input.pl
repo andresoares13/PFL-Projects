@@ -101,21 +101,42 @@ validPlayerPieceMove(2,'d','s').
 validPlayerPieceMove(2,'d','d').
 
 
+%pieces cant capture vertically
+verticalCapture(Board,X,Y,Player,'w') :-
+    getPieceByPos(Board,X,Y,Piece),
+    getFirstLetter(Piece,Letter),
+    changePlayer(Player,OtherPlayer),
+    validPiece(OtherPlayer,Letter).
+
+verticalCapture(Board,X,Y,Player,'s') :-
+    getPieceByPos(Board,X,Y,Piece),
+    getFirstLetter(Piece,Letter),
+    changePlayer(Player,OtherPlayer),
+    validPiece(OtherPlayer,Letter).
+
+
+ownPiece(Board,X,Y,Player) :-
+    getPieceByPos(Board,X,Y,Piece),
+    getFirstLetter(Piece,Letter),
+    validPiece(Player,Letter).
+
+
+
 % Controls the input of the desired move
 
 
+
 checkInputMove(Board,Piece,Player,Move,Xsum,Ysum,Length,_) :-
+    valid_moves(Board-Length-Piece,Player,MoveList),
+    member(Move,MoveList),
     translateMove(Move,Xdif,Ydif),
     getPiece(Board,Xi,Yi,Piece,Player,_),
-    atom_chars(Piece,[Letter|_]),
-    validPlayerPieceMove(Player,Letter,Move),
     Xsum is Xi + Xdif,
-    Xsum > 0,
-    Xsum < Length + 1,
-    Ysum is Yi + Ydif,
-    Ysum > 0,
-    length(Board,Height),
-    Ysum < Height + 1.
+    Ysum is Yi + Ydif.
+
+
+
+
 
 checkInputMove(Board,_,Player,Move,_,_,Length,GameMove) :-
     \+translateMove(Move,_,_),
@@ -179,6 +200,42 @@ checkInputMove(Board,Piece,Player,Move,_,_,Length,GameMove) :-
     asserta(state(Board-Player-GameMove-Length)),
     fail.   
 
+
+checkInputMove(Board,Piece,Player,Move,_,_,Length,GameMove) :-
+    translateMove(Move,Xdif,Ydif),
+    getPiece(Board,Xi,Yi,Piece,Player,_),
+    atom_chars(Piece,[Letter|_]),
+    validPlayerPieceMove(Player,Letter,Move),
+    Xsum is Xi + Xdif,
+    Xsum > 0,
+    Xsum < Length + 1,
+    Ysum is Yi + Ydif,
+    Ysum > 0,
+    length(Board,Height),
+    Ysum < Height + 1,
+    ownPiece(Board,Xsum,Ysum,Player),
+    nl,nl,write('You have a piece there, choose another move'),nl,nl,
+    asserta(state(Board-Player-GameMove-Length)),
+    fail.   
+
+
+checkInputMove(Board,Piece,Player,Move,_,_,Length,GameMove) :-
+    translateMove(Move,Xdif,Ydif),
+    getPiece(Board,Xi,Yi,Piece,Player,_),
+    atom_chars(Piece,[Letter|_]),
+    validPlayerPieceMove(Player,Letter,Move),
+    Xsum is Xi + Xdif,
+    Xsum > 0,
+    Xsum < Length + 1,
+    Ysum is Yi + Ydif,
+    Ysum > 0,
+    length(Board,Height),
+    Ysum < Height + 1,
+    \+ ownPiece(Board,Xsum,Ysum,Player),
+    verticalCapture(Board,Xsum,Ysum,Player,Move),
+    nl,nl,write('You cannot capture vertically, choose another move'),nl,nl,
+    asserta(state(Board-Player-GameMove-Length)),
+    fail.   
 
 
 % Controls the input of the boards dimensions

@@ -1,10 +1,12 @@
 :- use_module(library(lists)).
+:- use_module(library(random)).
 :- consult(draw).
 :- consult(input).
 :- consult(menu).
 
 :- dynamic boardSettings/1.
 :- dynamic state/1.
+:- dynamic level/1.
 
 
 createBoardSpaces(Board,_,0,Board).
@@ -75,6 +77,11 @@ getPiece(Board,X,Y,Piece,Player,ActualPiece) :-
     atom_concat(_,Piece,ActualPiece),
     getFirstLetter(ActualPiece,Letter),
     validPiece(Player,Letter).
+
+
+getPieceByPos(Board,X,Y,Piece) :-
+    nth1(Y,Board,Line),
+    nth1(X,Line,Piece).
 
 getFirstLetter(Atom, FirstLetter) :-
     atom_chars(Atom, AtomChars),
@@ -161,6 +168,18 @@ playerEnd(2,Board,Line,'s') :-
     length(Board,Line).
 
 
+%see if the player still has any peaces alive, if all of the pieces are gone, the player without pieces loses
+hasPieces(Board,Player) :-
+    findall(Piece, (
+        getPiece(Board,_,_,Piece,Player,_),
+        getFirstLetter(Piece,Letter),
+        validPiece(Player,Letter)
+    ), PieceList),
+    length(PieceList,Len),
+    Len > 0.
+    
+
+
 checkStateEnd(Board,Player) :-
     playerEnd(Player,Board,LineNr,Letter),
     nth1(LineNr,Board,Line),
@@ -168,18 +187,71 @@ checkStateEnd(Board,Player) :-
     sub_atom(M,0,_,_,Letter),
     winner(Player).
 
+checkStateEnd(Board,Player) :-
+    changePlayer(Player,OtherPlayer),
+    \+ hasPieces(Board,OtherPlayer),
+    winner(Player).
+
 checkStateEnd(_,_).    
 
 incrementMove(Move,NewMove) :-
     NewMove is Move + 1.
+
+
+
+%useful for AI
+
+valid_moves(Board-Length-Piece,Player,MoveList) :-
+    getFirstLetter(Piece,Letter),
+    findall(Move, (
+        validPlayerPieceMove(Player,Letter,Move),
+        translateMove(Move,Xdif,Ydif),
+        getPiece(Board,Xi,Yi,Piece,Player,_),
+        Xsum is Xi + Xdif,
+        Xsum > 0,
+        Xsum < Length + 1,
+        Ysum is Yi + Ydif,
+        Ysum > 0,
+        length(Board,Height),
+        Ysum < Height + 1,
+        \+ ownPiece(Board,Xsum,Ysum,Player),
+        \+ verticalCapture(Board,Xsum,Ysum,Player,Move)
+    ), MoveList).
     
+random_piece(Length, N) :-
+    PureLength is Length + 1,
+    random(1, PureLength, N).
 
 
+
+%choose_move(+GameState, +Player,+Level, -Move)
+choose_move(Board-Length-Piece, Player, 1, Move) :-
+    repeat,
+    random_piece(Length,PieceNumber),
+    convertNumberToAtom(PieceNumber,Piece),
+    getPiece(Board,_,_,Piece,Player,NewPiece),
+    valid_moves(Board-Length-NewPiece,Player,MoveList),
+    random_member(Move, MoveList),
+    !.
+
+
+computerMove(Board-Length,Player,1,NewBoard) :-
+    choose_move(Board-Length-Piece,Player,1,Move),
+    translateMove(Move,Xdif,Ydif),
+    getPiece(Board,Xi,Yi,Piece,Player,NewPiece),
+    Xsum is Xi + Xdif,
+    Ysum is Yi + Ydif,
+    movePiece(Board,NewPiece,Xsum,Ysum,Player,NewBoard).
+
+
+
+%main function and game loops
 
 
 play:- 
     prompt(_, ''),
     asserta(boardSettings(5-5)),
+    asserta(level(1)),
     menu.
 
 
@@ -202,8 +274,32 @@ gameLoop :-
     checkStateEnd(Finalboard,Player),
     changePlayer(Player,NewPlayer),
     incrementMove(Move,NewMove),nl,nl,
-    drawGame(Finalboard,NewMove,NewPlayer,Length),
+    display_game(Finalboard-NewMove-NewPlayer-Length),
     asserta(state(Finalboard-NewPlayer-NewMove-Length)),
+    fail.
+
+
+gameLoopHumanComputer :-
+    repeat,
+    retract(state(Board-Player-Move-Length)),
+    write('Choose your piece: '), 
+    input_number(NumberPiece),
+    convertNumberToAtom(NumberPiece,Piece),
+    checkInputPiece(Board,Piece,Player,NewPiece,Move,Length),
+    write('Choose your move: '), 
+    get_char(PlayerMove),
+    skip_line,
+    checkInputMove(Board,NewPiece,Player,PlayerMove,X2,Y2,Length,Move),
+    movePiece(Board,NewPiece,X2,Y2,Player,Finalboard),
+    checkStateEnd(Finalboard,Player),
+    incrementMove(Move,NewMove),nl,nl,
+    retract(level(Level)),
+    computerMove(Finalboard-Length,2,Level,ComputerBoard),
+    checkStateEnd(ComputerBoard,2),
+    incrementMove(NewMove,ComputerMove),nl,nl,
+    display_game(ComputerBoard-ComputerMove-Player-Length),
+    asserta(state(ComputerBoard-Player-ComputerMove-Length)),
+    asserta(level(Level)),
     fail.
    
 

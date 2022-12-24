@@ -14,12 +14,13 @@ menu:-
 
 
 menuController('1') :-
-    retract(boardSettings(Length-Height)),
-    createBoard(Length,Height,Board),
-    drawGame(Board,1,1,Length),
-    asserta(state(Board-1-1-Length)),
-    asserta(boardSettings(Length-Height)),
-    gameLoop.
+    nl,nl,nl,nl,
+    write('                      1. Player VS Player'),nl,nl,
+    write('                      2. Player VS Computer'),nl,nl,
+    write('                      3. Computer VS Computer'),nl,nl,
+    get_char(Option),
+    get_char(_),
+    playController(Option).
 
 
 menuController('2') :-
@@ -56,6 +57,34 @@ menuController(_) :-
     get_char(Option),
     get_char(_),
     menuController(Option).
+
+
+
+playController('1') :-
+    retract(boardSettings(Length-Height)),
+    createBoard(Length,Height,Board),
+    display_game(Board-1-1-Length),
+    asserta(state(Board-1-1-Length)),
+    asserta(boardSettings(Length-Height)),
+    gameLoop.
+
+playController('2') :-
+    retract(boardSettings(Length-Height)),
+    createBoard(Length,Height,Board),
+    display_game(Board-1-1-Length),
+    asserta(state(Board-1-1-Length)),
+    asserta(boardSettings(Length-Height)),
+    gameLoopHumanComputer.
+
+
+playController('3') :- menu.
+
+
+playController(_):-
+    nl,nl,write('             Invalid Input, Please Try Again!  '),nl,nl,
+    get_char(Option),
+    get_char(_),
+    instructionsController(Option).
 
 
 instructionsController('0'):-
