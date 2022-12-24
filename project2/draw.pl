@@ -26,6 +26,59 @@ printRow(Row,L):-
     write('                      '),write('\x2523\'),
     printBorderLineMiddle(L),write('\x252B\').
 
+
+
+
+
+%pieces with number 10 or bigger
+
+last_two_digits(Atom, LastTwo) :-
+    atom_length(Atom, Length),
+    End is Length - 1,
+    Start is End - 1,
+    sub_atom(Atom, Start, 2, 0, LastTwo).
+
+printRowAux([E]) :-
+    atom_length(E,AL),
+    AL > 2,
+    last_two_digits(E,'10'),
+    write(' '),
+    write(E),write(' ').
+
+printRowAux([E]) :-
+    atom_length(E,AL),
+    AL > 2,
+    last_two_digits(E,Last),
+    Last @> '10',
+    write('  '),
+    write(E),write(' ').    
+   
+
+printRowAux([El|Tail]) :-
+    length([El|Tail],L),
+    L > 1,
+    atom_length(El,AL),
+    AL > 2,
+    last_two_digits(El,Last),
+    Last @> '10',
+    write('  '),
+    write(El),write(' '),
+    write('\x2503\'),
+    printRowAux(Tail).  
+
+printRowAux([El|Tail]) :-
+    length([El|Tail],L),
+    L > 1,
+    atom_length(El,AL),
+    AL > 2,
+    write(' '),
+    last_two_digits(El,'10'),
+    write(El),write(' '),
+    write('\x2503\'),
+    printRowAux(Tail).  
+
+%regular elements
+
 printRowAux([]).
 printRowAux([E]) :-
     atom_length(E,AL),
@@ -42,20 +95,11 @@ printRowAux([El|Tail]) :-
     write('  '),write('\x2503\'),write(' '),
     printRowAux(Tail).
 
-printRowAux([E]) :-
-    atom_length(E,AL),
-    AL > 2,
-    write(' '),
-    write(E).
-printRowAux([El|Tail]) :-
-    length([El|Tail],L),
-    L > 1,
-    atom_length(El,AL),
-    AL > 2,
-    write(' '),
-    write(El),write(' '),
-    write('\x2503\'),
-    printRowAux(Tail).    
+
+  
+
+
+
 
 printBorderLineMiddle(0).
 printBorderLineMiddle(1):-
