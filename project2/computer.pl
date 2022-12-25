@@ -46,6 +46,16 @@ computerMove(Board-Length,Player,1,NewBoard) :-
 %level two of difficulty is a greedy approach opposed to a random one.
 
 
+computerMove(Board-Length,Player,2,NewBoard) :-
+    bestMoveByPiece(Board-Length,Player,MoveTuples), %gets all the best moves by each piece
+    maxTupleMoveValue(MoveTuples,Piece-Move-_), %gest the best move from the best moves
+    write(MoveTuples),nl,flush_output,
+    areMovesSameValue(MoveTuples,Player,Piece-Move-_,ChosenP-ChosenM-_), %if all the moves have the same value, then it takes into account other metrics like swan existance and changes the chosen move, ex: if they all have the same value but player 1 has a swan than the swan should move
+    translateMove(ChosenM,Xdif,Ydif),
+    getPiece(Board,Xi,Yi,ChosenP,Player,NewPiece),
+    Xsum is Xi + Xdif,
+    Ysum is Yi + Ydif,
+    movePiece(Board,NewPiece,Xsum,Ysum,Player,NewBoard).
 
 
 
@@ -62,10 +72,13 @@ value(Board, Player, Value) :-
     changePlayer(Player,OtherPlayer),
     swanCount(Board,OtherPlayer,Player2SwanCount),
     SwanPoints is Player1SwanCount - Player2SwanCount,
+    SwanPointsMul is SwanPoints * 50,
     duckCount(Board,Player,Player1DuckCount),
-    duckCount(Board,Player,Player2DuckCount),
+    duckCount(Board,OtherPlayer,Player2DuckCount),
     DuckPoints is Player1DuckCount - Player2DuckCount,
-    Value is SwanPoints + DuckPoints.
+    DuckPointsMul is DuckPoints * 20,
+    nextMoveEnds(Board,Player,Ending), 
+    Value is SwanPointsMul + DuckPointsMul + Ending.
 
 
 %The next two functions search the whole board to find ducks and swans. We need to know this to calculate the value of a given board.
@@ -97,12 +110,12 @@ isDuck(1,'D').
 isDuck(2,'d').
 
 
-tryMove(Board-Piece,Moves,Move-Val) :-
+tryMove(Board-Piece,Player,Moves,Move-Val) :-
     head(Moves,H),
-    tryMoveAux(Board-Piece,Moves,H-0,Move-Val).
+    tryMoveAux(Board-Piece,Player,Moves,H-(-100000),Move-Val). %we need a small value, something like Int_Min in c++, since we need to get the maximum even with negative values
 
-tryMoveAux(_,[],Move-Acc,Move-Acc).
-tryMoveAux(Board-Piece,[TMove|Rest],_-Acc,Move-Val) :-
+tryMoveAux(_,_,[],Move-Acc,Move-Acc).
+tryMoveAux(Board-Piece,Player,[TMove|Rest],_-Acc,Move-Val) :-
     translateMove(TMove,Xdif,Ydif),
     getPiece(Board,Xi,Yi,Piece,Player,NewPiece),
     Xsum is Xi + Xdif,
@@ -110,9 +123,9 @@ tryMoveAux(Board-Piece,[TMove|Rest],_-Acc,Move-Val) :-
     movePiece(Board,NewPiece,Xsum,Ysum,Player,NewBoard),
     value(NewBoard,Player,Value),
     Value > Acc,
-    tryMoveAux(Board-Piece,Rest,TMove-Value,Move-Val).
+    tryMoveAux(Board-Piece,Player,Rest,TMove-Value,Move-Val).
 
-tryMoveAux(Board-Piece,[TMove|Rest],AMove-Acc,Move-Val) :-
+tryMoveAux(Board-Piece,Player,[TMove|Rest],AMove-Acc,Move-Val) :-
     translateMove(TMove,Xdif,Ydif),
     getPiece(Board,Xi,Yi,Piece,Player,NewPiece),
     Xsum is Xi + Xdif,
@@ -120,7 +133,7 @@ tryMoveAux(Board-Piece,[TMove|Rest],AMove-Acc,Move-Val) :-
     movePiece(Board,NewPiece,Xsum,Ysum,Player,NewBoard),
     value(NewBoard,Player,Value),
     Value =< Acc,
-    tryMoveAux(Board-Piece,Rest,AMove-Acc,Move-Val).
+    tryMoveAux(Board-Piece,Player,Rest,AMove-Acc,Move-Val).
 
 
 bestMoveByPiece(Board-Length,Player,Moves) :-
@@ -130,11 +143,13 @@ bestMoveByPiece(Board-Length,Player,Moves) :-
         getFirstLetter(Piece,Letter),
         validPiece(Player,Letter),
         valid_moves(Board-Length-Piece,Player,Moves),
-        tryMove(Board-Piece,Moves,Move-Value)
+        tryMove(Board-Piece,Player,Moves,Move-Value)
     ),Moves).
 
 
 
+
+%find the tuple Piece-Move-Value with the biggest value
 maxTupleMoveValue(Moves,Piece-Move-Max) :-
     head(Moves,FPiece-FMove-FVal),
     maxTupleMoveValueAux(Moves,FPiece-FMove-FVal,Piece-Move-Max).
@@ -147,3 +162,57 @@ maxTupleMoveValueAux([TPiece-TMove-Value|Rest],_-_-Acc,Piece-Move-Max) :-
 maxTupleMoveValueAux([_-_-Value|Rest],APiece-AMove-Acc,Piece-Move-Max) :-
     Value =< Acc,
     maxTupleMoveValueAux(Rest,APiece-AMove-Acc,Piece-Move-Max).
+
+
+
+nextMoveEnds(Board,Player,Ending) :-
+    nextMoveEndsAux(Board,Player,0,Ending).
+
+nextMoveEndsAux(Board,Player,Acc,Ending) :-
+    game_over(Board-Player,Player),
+    Ending is Acc + 1000.
+
+nextMoveEndsAux(Board,Player,Acc,Acc) :-
+    \+game_over(Board-Player,Player).
+
+
+
+
+%checks to see if all of the moves have the same value, in this case we need to see if we have a swan and move it, since that will have more value
+
+
+
+areMovesSameValue(Moves,Player,_,NewMove) :- %if they have the same value, tries to find a swan and focus on moving it, moving a swan is more valuable
+    sameValue(Moves),
+    findSwan(Moves,Player,NewMove).
+
+
+areMovesSameValue(Moves,_,CurrentMove,CurrentMove) :-
+    \+sameValue(Moves).
+
+
+sameValue(Moves) :-
+    head(Moves,M),
+    sameValueAux(Moves,M).
+
+
+sameValueAux([],_-_-_).
+sameValueAux([_-_-Value|Rest],_-_-Value) :-
+    sameValueAux(Rest,_-_-Value).
+
+
+
+findSwan(Moves,Player,New) :-
+    head(Moves,Acc),
+    findSwanAux(Moves,Player,Acc,New).
+
+
+findSwanAux([],_,Acc,Acc).
+findSwanAux([TPiece-TMove-_|_],Player,_,TPiece-TMove-_) :-
+    getFirstLetter(TPiece,Letter),
+    isSwan(Player,Letter).
+
+findSwanAux([TPiece-_-_|Rest],Player,APiece-AMove-_,New) :-
+    getFirstLetter(TPiece,Letter),
+    \+isSwan(Player,Letter),
+    findSwanAux(Rest,Player,APiece-AMove-_,New).

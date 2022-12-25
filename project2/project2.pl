@@ -184,18 +184,24 @@ hasPieces(Board,Player) :-
 
 
 checkStateEnd(Board,Player) :-
-    playerEnd(Player,Board,LineNr,Letter),
-    nth1(LineNr,Board,Line),
-    member(M,Line),
-    sub_atom(M,0,_,_,Letter),
-    winner(Player).
-
-checkStateEnd(Board,Player) :-
-    changePlayer(Player,OtherPlayer),
-    \+ hasPieces(Board,OtherPlayer),
+    game_over(Board-Player,Player),
     winner(Player).
 
 checkStateEnd(_,_).    
+
+
+%game_over(+GameState, -Winner) %checks to see if the player won the game, to win the game, the swan either reached the players row or there are no more pieces
+game_over(Board-Player, Player) :-   %if the given player won the game, then it unifies with Winner
+    playerEnd(Player,Board,LineNr,Letter),
+    nth1(LineNr,Board,Line),
+    member(M,Line),
+    sub_atom(M,0,_,_,Letter).
+
+game_over(Board-Player, Player) :-
+    changePlayer(Player,OtherPlayer),
+    \+ hasPieces(Board,OtherPlayer).
+
+
 
 incrementMove(Move,NewMove) :-
     NewMove is Move + 1.
