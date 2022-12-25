@@ -132,7 +132,11 @@ settingsController('1'):-
 
 settingsController('2'):-
     nl,nl,nl,nl,
-    menu.
+    write('                      1. Easy'),nl,nl,
+    write('                      2. Hard'),nl,nl,
+    get_char(Option),
+    get_char(_),
+    newComputerLevel(Option).
 settingsController('3'):-
     prompt(_, ''),
     menu.    

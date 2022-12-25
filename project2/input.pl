@@ -270,3 +270,22 @@ newDimensions(_,Height) :-
     nl,nl,write('             Invalid Dimensions, Please Try Again!  '),nl,nl,
     flush_output,
     settingsController('1').
+
+
+newComputerLevel('1') :-
+    write('                      The Computer Level has been set to: '),
+    write('Easy'),nl,nl,
+    retract(level(_)),
+    asserta(level(1)),
+    menu.
+
+newComputerLevel('2') :-
+    write('                      The Computer Level has been set to: '),
+    write('Hard'),nl,nl,
+    retract(level(_)),
+    asserta(level(2)),
+    menu.
+
+newComputerLevel(_) :-
+    write('                      Invalid Level, Please Try Again! '),
+    settingsController('2').
