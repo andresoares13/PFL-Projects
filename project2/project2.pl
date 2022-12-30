@@ -66,7 +66,7 @@ replace_at_index(X,Y,List,Index,NewList) :-
 
 replace_at_index(_,_,[],_,_,[]).
 replace_at_index(X,Y,[X|Xs],Index,CurrentIndex,[Y|Xs]) :-
-    Index =:= CurrentIndex.                                  %ask teacher about the validity of this operator
+    Index =:= CurrentIndex.                                  
 replace_at_index(X,Y,[Z|Xs],Index,CurrentIndex,[Z|Zs]) :-
     CurrentIndex < Index,
     NewIndex is CurrentIndex + 1,
@@ -83,9 +83,20 @@ getPiece(Board,X,Y,Piece,Player,ActualPiece) :-
     validPiece(Player,Letter).
 
 
+
 getPieceByPos(Board,X,Y,Piece) :-
     nth1(Y,Board,Line),
     nth1(X,Line,Piece).
+
+
+getPieceByAtom(Board,X,Y,Piece,Player,ActualPiece) :-
+    nth1(Y,Board,Line),
+    nth1(X,Line,ActualPiece),
+    atom_concat(_,Piece,ActualPiece),
+    sub_atom(ActualPiece, 1, _, 0, Piece),
+    getFirstLetter(ActualPiece,Letter),
+    validPiece(Player,Letter).
+
 
 getFirstLetter(Atom, FirstLetter) :-
     atom_chars(Atom, AtomChars),
@@ -180,6 +191,32 @@ hasPieces(Board,Player) :-
     ), PieceList),
     length(PieceList,Len),
     Len > 0.
+
+
+
+writePossiblePieces(Board,Player) :-
+    write('Pieces: '),
+    findall(Piece,(
+        getPiece(Board,_,_,Piece,Player,Piece),
+        sub_atom(Piece, 1, _, 0, PieceNr),
+        write(PieceNr),write(', ')
+    ),_),
+    write('Simply write the number and press enter'),nl,nl.
+
+
+writePossibleMoves(Board,Player,Length,Piece) :-
+    nl, write('The possible moves for the Piece '),write(Piece),write(' are: '),
+    valid_moves(Board-Length-Piece,Player,MoveList),
+    writePossibleMovesAux(MoveList),
+    write('Simply write the letter and press enter'),nl,nl.
+
+writePossibleMovesAux([]).
+writePossibleMovesAux([Move|Rest]) :-
+    translateArrowMove(Move),
+    writePossibleMovesAux(Rest).    
+
+
+
     
 
 
@@ -226,10 +263,12 @@ winner(Player) :-
 gameLoop :- 
     repeat,
     retract(state(Board-Player-Move-Length)),
+    writePossiblePieces(Board,Player),
     write('Choose your piece: '), 
     input_number(NumberPiece),
     convertNumberToAtom(NumberPiece,Piece),
     checkInputPiece(Board,Piece,Player,NewPiece,Move,Length),
+    writePossibleMoves(Board,Player,Length,NewPiece),
     write('Choose your move: '), 
     get_char(PlayerMove),
     skip_line,
@@ -246,10 +285,12 @@ gameLoop :-
 gameLoopHumanComputer :-
     repeat,
     retract(state(Board-Player-Move-Length)),
+    writePossiblePieces(Board,Player),
     write('Choose your piece: '), 
     input_number(NumberPiece),
     convertNumberToAtom(NumberPiece,Piece),
     checkInputPiece(Board,Piece,Player,NewPiece,Move,Length),
+    writePossibleMoves(Board,Player,Length,NewPiece),
     write('Choose your move: '), 
     get_char(PlayerMove),write(PlayerMove),
     skip_line,
@@ -283,3 +324,11 @@ gameLoopComputerComputer :-
    
 
 
+
+%predicate that given the move displays it in a more user friendly way
+translateArrowMove('w') :- write('\x2191\'),write(' w, ').
+translateArrowMove('q') :- write('\x2196\'),write(' q, ').
+translateArrowMove('e') :- write('\x2197\'),write(' e, ').
+translateArrowMove('s') :- write('\x2193\'),write(' s, ').
+translateArrowMove('a') :- write('\x2199\'),write(' a, ').
+translateArrowMove('d') :- write('\x2198\'),write(' d, ').

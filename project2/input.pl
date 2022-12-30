@@ -48,7 +48,7 @@ checkInputPiece(Board,Piece,Player,NewPiece,_,Length) :-
     Piece @> '0',
     atom_to_number(Piece,NumberPiece),
     NumberPiece =< Length,
-    getPiece(Board,_,_,Piece,Player,NewPiece). % test to see if the piece is still alive
+    getPieceByAtom(Board,_,_,Piece,Player,NewPiece). % test to see if the piece is still alive
    
 
 checkInputPiece(Board,Piece,Player,_,Move,Length) :-

@@ -77,8 +77,9 @@ value(Board, Player, Value) :-
     duckCount(Board,OtherPlayer,Player2DuckCount),
     DuckPoints is Player1DuckCount - Player2DuckCount,
     DuckPointsMul is DuckPoints * 20,
+    nextMoveCaptured(Board,Player,Captured),
     nextMoveEnds(Board,Player,Ending), 
-    Value is SwanPointsMul + DuckPointsMul + Ending.
+    Value is SwanPointsMul + DuckPointsMul + Ending + Captured.
 
 
 %The next two functions search the whole board to find ducks and swans. We need to know this to calculate the value of a given board.
@@ -176,6 +177,84 @@ nextMoveEndsAux(Board,Player,Acc,Acc) :-
     \+game_over(Board-Player,Player).
 
 
+nextMoveCaptured(Board,Player,Captured) :-
+    nextMoveCapturedAux(Board,Player,0,Captured).
+
+nextMoveCapturedAux(Board,Player,Acc,Captured) :-
+    nearEnemyPiece(Board,Player),
+    Captured is Acc - 5.
+
+nextMoveCapturedAux(Board,Player,Acc,Acc) :-
+    \+nearEnemyPiece(Board,Player).
+
+
+nearEnemyPiece(Board,Player) :-
+    changePlayer(Player,OtherPlayer),
+    findall(Piece,(
+        nth1(_,Board,Line),
+        nth1(_,Line,Piece),
+        getFirstLetter(Piece,Letter),
+        validPiece(Player,Letter),
+        getPiece(Board,X,Y,Piece,Player,Piece),
+        X2 is X + 1,
+        Y2 is Y + 1,
+        getPieceByPos(Board,X2,Y2,EnemyPiece),
+        getFirstLetter(EnemyPiece,LetterEnemy),
+        validPiece(OtherPlayer,LetterEnemy)
+    ),Player1Pieces),
+    length(Player1Pieces,Len),
+    Len > 0.
+
+nearEnemyPiece(Board,Player) :-
+    changePlayer(Player,OtherPlayer),
+    findall(Piece,(
+        nth1(_,Board,Line),
+        nth1(_,Line,Piece),
+        getFirstLetter(Piece,Letter),
+        validPiece(Player,Letter),
+        getPiece(Board,X,Y,Piece,Player,Piece),
+        X2 is X - 1,
+        Y2 is Y + 1,
+        getPieceByPos(Board,X2,Y2,EnemyPiece),
+        getFirstLetter(EnemyPiece,LetterEnemy),
+        validPiece(OtherPlayer,LetterEnemy)
+    ),Player1Pieces),
+    length(Player1Pieces,Len),
+    Len > 0.
+
+nearEnemyPiece(Board,Player) :-
+    changePlayer(Player,OtherPlayer),
+    findall(Piece,(
+        nth1(_,Board,Line),
+        nth1(_,Line,Piece),
+        getFirstLetter(Piece,Letter),
+        validPiece(Player,Letter),
+        getPiece(Board,X,Y,Piece,Player,Piece),
+        X2 is X - 1,
+        Y2 is Y - 1,
+        getPieceByPos(Board,X2,Y2,EnemyPiece),
+        getFirstLetter(EnemyPiece,LetterEnemy),
+        validPiece(OtherPlayer,LetterEnemy)
+    ),Player1Pieces),
+    length(Player1Pieces,Len),
+    Len > 0.
+
+nearEnemyPiece(Board,Player) :-
+    changePlayer(Player,OtherPlayer),
+    findall(Piece,(
+        nth1(_,Board,Line),
+        nth1(_,Line,Piece),
+        getFirstLetter(Piece,Letter),
+        validPiece(Player,Letter),
+        getPiece(Board,X,Y,Piece,Player,Piece),
+        X2 is X + 1,
+        Y2 is Y - 1,
+        getPieceByPos(Board,X2,Y2,EnemyPiece),
+        getFirstLetter(EnemyPiece,LetterEnemy),
+        validPiece(OtherPlayer,LetterEnemy)
+    ),Player1Pieces),
+    length(Player1Pieces,Len),
+    Len > 0.
 
 
 %checks to see if all of the moves have the same value, in this case we need to see if we have a swan and move it, since that will have more value

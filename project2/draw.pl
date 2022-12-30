@@ -62,22 +62,12 @@ last_two_digits(Atom, LastTwo) :-
     Start is End - 1,
     sub_atom(Atom, Start, 2, 0, LastTwo).
 
-printRowAux([E]) :-
-    atom_length(E,AL),
-    AL > 2,
-    last_two_digits(E,'10'),
-    write(' '),
-    writeColor(E),
-    write(' ').
 
 printRowAux([E]) :-
     atom_length(E,AL),
     AL > 2,
-    last_two_digits(E,Last),
-    Last @> '10',
-    write('  '),
     writeColor(E),
-    write(' ').    
+    write('  ').    
    
 
 printRowAux([El|Tail]) :-
@@ -85,25 +75,12 @@ printRowAux([El|Tail]) :-
     L > 1,
     atom_length(El,AL),
     AL > 2,
-    last_two_digits(El,Last),
-    Last @> '10',
-    write('  '),
     writeColor(El),
-    write(' '),
-    write('\x2503\'),
+    write('  '),
+    write('\x2503\'),write(' '),
     printRowAux(Tail).  
 
-printRowAux([El|Tail]) :-
-    length([El|Tail],L),
-    L > 1,
-    atom_length(El,AL),
-    AL > 2,
-    write(' '),
-    last_two_digits(El,'10'),
-    writeColor(El),
-    write(' '),
-    write('\x2503\'),
-    printRowAux(Tail).  
+
 
 %regular elements
 
@@ -204,5 +181,4 @@ display_game(Board-Move-Player-Length) :-
     nl,write('                      '),write('\x250F\'),
     printBorderLine(Length),write('\x2513\'),
     printBoard(Boardprint,Length),
-    write('                        '),
-    nl,nl,nl,nl.
+    nl,nl,nl,nl,flush_output.
