@@ -175,7 +175,7 @@ display_game(Board-Move-Player-Length) :-
     nl,nl,nl,
     write('                                   Ugly Duck'),nl,nl,
     write('                                    Move: '),write(Move),nl,nl,
-    write('                                  Player No: '),write(Player),nl,nl,
+    write('                           Current Turn - Player No: '),write(Player),nl,nl,
     write('                        '),
     reverse(Board,Boardprint), % the reverse is so that the print can be seen correctly in the console
     nl,write('                      '),write('\x250F\'),

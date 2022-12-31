@@ -1,3 +1,5 @@
+%predicate that displays the menu and its options
+%menu()
 menu:-
     nl,nl,write('                         Ugly Duck'),write('            __'),nl,
     write('                                            <(o )___'),nl,
@@ -12,8 +14,9 @@ menu:-
     get_char(_),
     menuController(Option).
 
-
-menuController('1') :-
+%predicate that will display after an option from the menu was chosen and will give new options
+%menuController(+Option)
+menuController('1') :- %this case is the play for example
     nl,nl,nl,nl,
     write('                      1. Player VS Player'),nl,nl,
     write('                      2. Player VS Computer'),nl,nl,
@@ -24,7 +27,7 @@ menuController('1') :-
     playController(Option).
 
 
-menuController('2') :-
+menuController('2') :- %settings
     nl,nl,nl,nl,
     write('                      1. Change Board Dimensions'),nl,nl,
     write('                      2. Change Computer Level'),nl,nl,
@@ -34,7 +37,7 @@ menuController('2') :-
     settingsController(Option).
 
 
-menuController('3') :-
+menuController('3') :- %intructions
     nl,nl,write('                         Ugly Duck'),write('            __'),nl,
     write('                                            <(o )___'),nl,
     write('                         Instructions'),write('        ( ._> /'),nl,
@@ -47,64 +50,72 @@ menuController('3') :-
     write('     GOAL: Wins the player who first moves a swan into his first row.'),nl,nl,nl,
     write('     If at any point during the game you wish to go back to the main menu,'),nl,
     write('       just enter . (period) when asked for the piece or for the move.'),nl,nl,nl,
+    write('     The pieces of player 1 have their letters in uppercase while the pieces'),nl,
+    write('       of player 2 are inin lowercase, they can be either a D/d or S/s.'),nl,nl,nl,
+    write('     You can change both the board dimensions and computer level in the settings.'),nl,nl,nl,
     write('                     0. Go Back to Main Menu'),nl,nl,
-    write('                     1. Exit'),nl,nl,
     get_char(Option),
     get_char(_),
     instructionsController(Option).
 
-menuController('4') :- halt.
+menuController('4') :- halt. %exit
 
-menuController(_) :-
+menuController(_) :- %invalid input
     nl,write('             Invalid Input, Please Try Again!  '),nl,
     get_char(Option),
     get_char(_),
     menuController(Option).
 
 
+%given a tuple size (length-Height) returns a board with that size, already containing the players pieces
+%initial_state(+Size, -GameState)
+initial_state(Length-Height, Board) :-  
+    createBoard(Length,Height,Board).
 
-playController('1') :-
+%predicate that given a play option starts the mode selected
+%playController(+Option)
+playController('1') :-  %Player VS Player
     retract(boardSettings(Length-Height)),
-    createBoard(Length,Height,Board),
+    initial_state(Length-Height,Board),
     display_game(Board-1-1-Length),
     asserta(state(Board-1-1-Length)),
     asserta(boardSettings(Length-Height)),
     gameLoop.
 
-playController('2') :-
+playController('2') :- %Player VS Computer
     retract(boardSettings(Length-Height)),
-    createBoard(Length,Height,Board),
+    initial_state(Length-Height,Board),
     display_game(Board-1-1-Length),
     asserta(state(Board-1-1-Length)),
     asserta(boardSettings(Length-Height)),
     gameLoopHumanComputer.
 
 
-playController('3') :- 
+playController('3') :- %Computer VS Computer
     retract(boardSettings(Length-Height)),
-    createBoard(Length,Height,Board),
+    initial_state(Length-Height,Board),
     display_game(Board-1-1-Length),
     asserta(state(Board-1-1-Length)),
     asserta(boardSettings(Length-Height)),
     gameLoopComputerComputer.
 
 
-playController('4') :- menu.
+playController('4') :- menu. %back to menu
 
 
-playController(_):-
+playController(_):- %invalid input
     nl,nl,write('             Invalid Input, Please Try Again!  '),nl,nl,
     get_char(Option),
     get_char(_),
     playController(Option).
 
 
-instructionsController('0'):-
+%controls the instructions
+%instructionsController(+Option)
+instructionsController('0'):- %back to menu
     prompt(_, ''),
     menu.
-instructionsController('1'):-
-    halt.
-instructionsController(_):-
+instructionsController(_):- %invalid input
     nl,nl,write('             Invalid Input, Please Try Again!  '),nl,nl,
     get_char(Option),
     get_char(_),
@@ -113,9 +124,9 @@ instructionsController(_):-
 
 
 
-
-settingsController('1'):-
-    nl,nl,nl,nl,
+%controls the settings 
+settingsController('1'):- %allows to change the size of the board
+    nl,nl,nl,nl,write('Min: 3  | Max: 22'),nl,nl,
     write('Board Length: '), input_number(Length),
     nl,nl,
     write('Board Height: '), input_number(Height),
@@ -130,17 +141,17 @@ settingsController('1'):-
 
 
 
-settingsController('2'):-
+settingsController('2'):- %allows to change the level of the AI
     nl,nl,nl,nl,
     write('                      1. Easy'),nl,nl,
     write('                      2. Hard'),nl,nl,
     get_char(Option),
     get_char(_),
     newComputerLevel(Option).
-settingsController('3'):-
+settingsController('3'):- %back to menu
     prompt(_, ''),
     menu.    
-settingsController(_):-
+settingsController(_):- %invalid input
     nl,nl,write('             Invalid Input, Please Try Again!  '),nl,nl,
     get_char(Option),
     get_char(_),
