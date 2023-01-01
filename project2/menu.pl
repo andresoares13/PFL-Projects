@@ -20,8 +20,9 @@ menuController('1') :- %this case is the play for example
     nl,nl,nl,nl,
     write('                      1. Player VS Player'),nl,nl,
     write('                      2. Player VS Computer'),nl,nl,
-    write('                      3. Computer VS Computer'),nl,nl,
-    write('                      4. Go Back to Main Menu'),nl,nl,
+    write('                      3. Computer VS Player'),nl,nl,
+    write('                      4. Computer VS Computer'),nl,nl,
+    write('                      5. Go Back to Main Menu'),nl,nl,
     get_char(Option),
     get_char(_),
     playController(Option).
@@ -91,7 +92,21 @@ playController('2') :- %Player VS Computer
     gameLoopHumanComputer.
 
 
-playController('3') :- %Computer VS Computer
+playController('3') :- %Computer VS Player
+    retract(boardSettings(Length-Height)),
+    initial_state(Length-Height,Board),
+    display_game(Board-1-1-Length),
+    retract(level(Level)),
+    computerMove(Board-Length,1,Level,ComputerBoard),
+    asserta(level(Level)),
+    checkStateEnd(ComputerBoard,1),
+    display_game(ComputerBoard-2-2-Length),
+    asserta(state(ComputerBoard-2-2-Length)),
+    asserta(boardSettings(Length-Height)),
+    gameLoopComputerHuman.
+
+
+playController('4') :- %Computer VS Computer
     retract(boardSettings(Length-Height)),
     initial_state(Length-Height,Board),
     display_game(Board-1-1-Length),
@@ -100,7 +115,7 @@ playController('3') :- %Computer VS Computer
     gameLoopComputerComputer.
 
 
-playController('4') :- menu. %back to menu
+playController('5') :- menu. %back to menu
 
 
 playController(_):- %invalid input
