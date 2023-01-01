@@ -157,7 +157,7 @@ evolvePiece(Piece,Atom,2) :-
 
      
 %changes the player, basically a toggle
-%changePlayer(+Player,-Player)    
+%changePlayer(+Player,-NewPlayer)    
 changePlayer(1,2).
 changePlayer(2,1).
 
