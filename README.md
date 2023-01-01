@@ -25,7 +25,7 @@ O objetivo do jogo é levar um dos nossos patos até à linha final para se tran
 
 Ao longo do caminho vamos encontrar peças do outro jogador, as quais apenas podemos capturar na diagonal, ficando na casa onde a peça estava. Os patos apenas podem andar para a frente e os cisnes para trás, não podendo ir para uma casa onde esteja uma peça do mesmo jogador.
 
-O jogo acaba ou quando o cisne chega à casa de partida ou quando um jogador captura todas as peças do outro jogador, sendo que nunca é possível empatar.
+O jogo acaba, ou quando o cisne chega à casa de partida, ou quando um jogador captura todas as peças do outro jogador, sendo que nunca é possível empatar.
 
 
 
@@ -38,7 +38,7 @@ O tabuleiro é representado a partir de uma lista com sublistas, sendo cada subl
 2. d[n] - pato do jogador 2
 3. S[n] - cisne do jogador 1
 4. s[n] - cisne do jogador 2
-5. '  ' - célula vazia (a formatação na permite perceber mas são 2 espaços)
+5. '  ' - célula vazia (a formatação não permite perceber mas são 2 espaços)
 
 
 ```prolog
@@ -103,9 +103,9 @@ No caso do modo de jogo Computer vs Computer, usa-se o predicado sleep(2) para t
 
 O predicado sleep é da library system. Outras libraries usadas foram lists e random. 
 
-Se o utilizador quiser mudar o tamanho do tabuleiro, no menu inicial apenas tem de carregar em 2 (Change Settings) e escolher a opção de mudar as dimensões da board onde introduz um comprimento e altura. Nas settings ainda é possivel alterar o nivel de dificuldade do computador (easy ou hard).
+Se o utilizador quiser mudar o tamanho do tabuleiro, no menu inicial apenas tem de carregar em 2 (Change Settings) e escolher a opção de mudar as dimensões da board onde introduz um comprimento e altura. Nas settings ainda é possivel alterar o nível de dificuldade do computador (easy ou hard).
 
-Após selecionar um modo de jogo o jogo inicia: 
+Após selecionar um modo de jogo, o jogo inicia: 
 
 ![](https://i.imgur.com/aaB9hMg.png)
 
@@ -155,14 +155,14 @@ Para o Computador temos 2 dificuldades: Easy e Hard. Para o computador escolher 
 
 No caso do nivel 1, o AI irá tanto escolher uma peça de forma aleatória como um move para essa peça de forma aleatória (para randomness total). Isto origina uma questão, pois no nosso jogo é possivel uma peça não ter jogadas possiveis, por exemplo, se tiver à sua frente e nas suas diagonais peças do mesmo jogador. Para resolver esta questão é usado um repeat, até encontrar uma peça que tenha uma jogada possivel (tudo de forma aleatoria), e depois se isso se verificar tem um cut no fim para poder acabar. Este é o único cut no jogo todo, mas consideramos ser necessário aqui.
 
-No caso do nivel 2, o AI é mais complexo. Ele é greedy então a solução arranjada é simular o todos os moves de todas as peças e ver o melhor valor possivel e executar essa jogada. Garantidamente vamos ter o melhor valor possivel usando o predicado anteriormente mencionado,value/3, porém há mais casos a considerar. Muitas vezes, este AI terá de saber o que fazer se todas as jogadas traduzirem um valor igual. Sendo um AI greedy, a solução passa por, não tendo cisnes, escolher a primeira que encontrar. No entanto, se existir um cisne, ele irá mover essa peça (atenção: isto é apenas se todos os moves tiverem o mesmo valor), pois ele quer acabar o jogo no menor número de jogadas possiveis e ao focar-se no movimento de um cisne isso irá acontecer. Nota que graças ao desconto de -5, o AI terá cuidado em não se mover para casas onde possa ser capturado no turno seguinte.
+No caso do nivel 2, o AI é mais complexo. Ele é greedy então a solução arranjada é simular o todos os moves de todas as peças e ver o melhor valor possivel e executar essa jogada. Garantidamente vamos ter o melhor valor possível usando o predicado anteriormente mencionado, value/3, porém há mais casos a considerar. Muitas vezes, este AI terá de saber o que fazer se todas as jogadas traduzirem um valor igual. Sendo um AI greedy, a solução passa por, não tendo cisnes, escolher a primeira que encontrar. No entanto, se existir um cisne, ele irá mover essa peça (atenção: isto é apenas se todos os moves tiverem o mesmo valor), pois ele quer acabar o jogo no menor número de jogadas possiveis e ao focar-se no movimento de um cisne isso irá acontecer. Nota que graças ao desconto de -5, o AI terá cuidado em não se mover para casas onde possa ser capturado no turno seguinte.
 
 
 
 
 ## Conclusões
 
-Este trabalho foi muito interessante de desenvolver pois permitiu-nos fazer um jogo de uma forma completamente diferente do tudo o que fizémos até agora. No inicio foi complicado perceber a parte de que qualquer componente do jogo não passa de um conjunto de condições, mas posteriormente, começámos a ter mais facilidade e conseguimos fazer o trabalho na totalidade. 
+Este trabalho foi muito interessante de desenvolver pois permitiu-nos fazer um jogo de uma forma completamente diferente de tudo o que fizemos até agora. No inicio foi complicado perceber a parte de que qualquer componente do jogo não passa de um conjunto de condições, mas posteriormente, começámos a ter mais facilidade e conseguimos fazer o trabalho na totalidade. 
 
 ### Known issues
 
